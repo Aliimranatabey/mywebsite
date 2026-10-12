@@ -1,57 +1,100 @@
 <template>
-  <v-container class="py-12">
-    <v-btn icon="mdi-arrow-left" variant="text" to="/blog" class="mb-4"></v-btn>
-    
-    <h1 class="text-h3 mb-6">Yeni Blog Yazısı</h1>
+  <div class="container narrow page">
+    <header class="head">
+      <h1 class="h1">Yeni yazı</h1>
+      <p class="lead mt-3">Başlığı net, girişi meraklandırıcı tut. Gerisi yazarken gelir.</p>
+    </header>
 
-    <v-card class="pa-6">
-      <v-form @submit.prevent="saveBlog">
-        <v-text-field v-model="form.title" label="Başlık" variant="outlined" class="mb-4" required></v-text-field>
-        <v-text-field v-model="form.category" label="Kategori" variant="outlined" class="mb-4" required></v-text-field>
-        
-        <div class="mb-4">
-          <label class="text-subtitle-1 mb-2 d-block">İçerik</label>
-          <QuillEditor theme="snow" v-model:content="form.content" contentType="html" toolbar="full" />
-        </div>
+    <v-alert v-if="error" type="error" class="mb-6">{{ error }}</v-alert>
 
-        <div class="d-flex gap-4 mt-6">
-          <v-btn color="primary" type="submit" :loading="saving" size="large">Oluştur</v-btn>
-          <v-btn variant="outlined" to="/blog" :disabled="saving" size="large">İptal</v-btn>
-        </div>
-      </v-form>
-    </v-card>
-  </v-container>
+    <v-form @submit.prevent="saveBlog">
+      <label class="field-label">Kapak görseli</label>
+      <CoverUploader v-model="form.coverImageUrl" class="mb-6" />
+
+      <label class="field-label">Başlık</label>
+      <v-text-field
+        v-model="form.title"
+        placeholder="Örn. Docker'ı neden sevdim"
+        :error-messages="fieldErrors.title"
+        hide-details="auto"
+        class="mb-6"
+      />
+
+      <label class="field-label">Kategori</label>
+      <v-text-field
+        v-model="form.category"
+        placeholder="Teknoloji, Yazılım, Hayat…"
+        :error-messages="fieldErrors.category"
+        hide-details="auto"
+        class="mb-6"
+      />
+
+      <label class="field-label">İçerik</label>
+      <div class="editor-box mb-8">
+        <QuillEditor
+          theme="snow"
+          v-model:content="form.content"
+          contentType="html"
+          toolbar="full"
+          placeholder="Yazmaya başla…"
+        />
+      </div>
+
+      <div class="form-actions">
+        <button type="submit" class="btn btn-primary" :disabled="saving">
+          {{ saving ? 'Yayınlanıyor…' : 'Yayınla' }}
+        </button>
+        <router-link to="/blog" class="btn btn-ghost">Vazgeç</router-link>
+      </div>
+    </v-form>
+  </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue';
-import { useRouter } from 'vue-router';
-import api from '@/services/api';
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import api from '@/services/api'
+import CoverUploader from '@/components/CoverUploader.vue'
 
-const router = useRouter();
-const saving = ref(false);
+const router = useRouter()
+const saving = ref(false)
+const error = ref('')
 
-const form = reactive({
-  title: '',
-  category: '',
-  content: ''
-});
+const form = reactive({ title: '', category: '', content: '', coverImageUrl: '' })
+const fieldErrors = reactive({ title: [], category: [], content: [] })
 
 const saveBlog = async () => {
-  if (!form.title || !form.category || !form.content) {
-    alert('Lütfen tüm alanları doldurun.');
-    return;
-  }
+  saving.value = true
+  error.value = ''
+  Object.keys(fieldErrors).forEach((key) => (fieldErrors[key] = []))
 
-  saving.value = true;
   try {
-    await api.createBlog(form);
-    router.push('/blog');
-  } catch (error) {
-    console.error('Blog oluşturulurken hata:', error);
-    alert('Blog oluşturulurken bir hata oluştu.');
+    const { data } = await api.createBlog({ ...form, coverImageUrl: form.coverImageUrl || null })
+    router.push(`/blog/${data.id}`)
+  } catch (e) {
+    error.value = e.message
+    if (e.fieldErrors) {
+      Object.keys(fieldErrors).forEach((key) => {
+        fieldErrors[key] = e.fieldErrors[key] ? [e.fieldErrors[key]] : []
+      })
+    }
   } finally {
-    saving.value = false;
+    saving.value = false
   }
-};
+}
 </script>
+
+<style scoped>
+.narrow {
+  max-width: calc(var(--measure) + 4rem);
+}
+
+.head {
+  margin-bottom: 2.5rem;
+}
+
+.form-actions {
+  display: flex;
+  gap: 0.75rem;
+}
+</style>

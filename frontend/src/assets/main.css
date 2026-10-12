@@ -1,14 +1,636 @@
-/* Reset default Vue boilerplate styles to allow Vuetify to control layout */
-#app {
-  width: 100%;
-  max-width: 100%;
-  margin: 0;
-  padding: 0;
+/* ============================================================
+   Tasarım sistemi — Apple sadeliğinden ilham, okyanus mavisi vurgu
+   Renkler token olarak burada; sayfalar sadece token kullanır.
+   Koyu tema <html data-theme="dark"> ile açılır (index.html ayarlar).
+   ============================================================ */
+
+:root {
+  /* --- Yüzeyler --- */
+  --bg: #f5f5f7;
+  --bg-subtle: #ebebef; /* hover zemini, kod arka planı */
+  --bg-elevated: #ffffff;
+
+  /* Bölüm tonları: ana sayfada bloklar sırayla bunları kullanır */
+  --tone-a: #ffffff;
+  --tone-b: #f5f5f7;
+
+  /* --- Metin --- */
+  --text: #1d1d1f;
+  --text-soft: #424245;
+  --text-muted: #6e6e73;
+
+  /* --- Çizgiler --- */
+  --border: rgba(0, 0, 0, 0.08);
+  --border-strong: rgba(0, 0, 0, 0.16);
+
+  /* --- Vurgu: okyanus mavisi --- */
+  --accent: #0a5c7a; /* bağlantı, vurgulu metin */
+  --accent-solid: #0a5c7a; /* buton zemini (beyaz yazı ~7.5:1) */
+  --accent-solid-hover: #084a63;
+  --accent-soft: #e3eff3; /* seçili zemin */
+  --accent-glow: rgba(10, 92, 122, 0.22); /* odak halkası, seçim */
+  --on-accent: #ffffff;
+  --danger: #c4314b;
+
+  /* --- Gölgeler: düz yüzey, sadece yüzen öğelerde gölge --- */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 8px 28px -10px rgba(0, 0, 0, 0.14);
+  --shadow-lg: 0 24px 60px -20px rgba(0, 0, 0, 0.25);
+
+  /* --- Cam (Apple Liquid Glass'ın web yaklaşımı, kendisi değil) --- */
+  --glass-bg: rgba(250, 250, 252, 0.72);
+  --glass-bg-strong: rgba(250, 250, 252, 0.92);
+  --glass-edge: rgba(255, 255, 255, 0.6);
+  --glass-shade: rgba(0, 0, 0, 0.06);
+  --scrim: rgba(232, 232, 237, 0.4);
+
+  /* --- Tipografi --- */
+  --font:
+    -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+  --font-display: 'Fraunces', 'Iowan Old Style', 'Palatino Linotype', Georgia, serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+
+  /* --- Ölçüler --- */
+  --nav-h: 44px;
+  --container: 68rem;
+  --measure: 42rem; /* makale okuma genişliği */
+  --radius-sm: 10px;
+  --radius: 14px;
+  --radius-lg: 22px;
+  --ease: cubic-bezier(0.25, 1, 0.5, 1);
+
+  color-scheme: light;
+}
+
+:root[data-theme='dark'] {
+  --bg: #000000;
+  --bg-subtle: #1c1c1e;
+  --bg-elevated: #1c1c1e;
+
+  --tone-a: #000000;
+  --tone-b: #161617;
+
+  --text: #f5f5f7;
+  --text-soft: #d2d2d7;
+  --text-muted: #a1a1a6;
+
+  --border: rgba(255, 255, 255, 0.1);
+  --border-strong: rgba(255, 255, 255, 0.2);
+
+  --accent: #5fb4d0;
+  --accent-solid: #1f7a99;
+  --accent-solid-hover: #2689ab;
+  --accent-soft: rgba(95, 180, 208, 0.14);
+  --accent-glow: rgba(95, 180, 208, 0.3);
+  --danger: #ff6b81;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 10px 30px -10px rgba(0, 0, 0, 0.7);
+  --shadow-lg: 0 24px 60px -20px rgba(0, 0, 0, 0.85);
+
+  --glass-bg: rgba(22, 22, 23, 0.72);
+  --glass-bg-strong: rgba(22, 22, 23, 0.94);
+  --glass-edge: rgba(255, 255, 255, 0.08);
+  --glass-shade: rgba(0, 0, 0, 0.4);
+  --scrim: rgba(0, 0, 0, 0.45);
+
+  color-scheme: dark;
+}
+
+/* Ters ton: açık temada siyah blok, koyu temada açık blok.
+   İçindeki her şey token kullandığı için renkler kendiliğinden döner. */
+.tone-inverse {
+  --tone-a: #000000;
+  --bg-elevated: #1c1c1e;
+  --text: #f5f5f7;
+  --text-soft: #d2d2d7;
+  --text-muted: #a1a1a6;
+  --border: rgba(255, 255, 255, 0.12);
+  --accent: #5fb4d0;
+  --accent-solid: #1f7a99;
+  --accent-solid-hover: #2689ab;
+  background: #000000;
+  color: var(--text);
+}
+
+:root[data-theme='dark'] .tone-inverse {
+  --tone-a: #f5f5f7;
+  --bg-elevated: #ffffff;
+  --text: #1d1d1f;
+  --text-soft: #424245;
+  --text-muted: #6e6e73;
+  --border: rgba(0, 0, 0, 0.1);
+  --accent: #0a5c7a;
+  --accent-solid: #0a5c7a;
+  --accent-solid-hover: #084a63;
+  background: #f5f5f7;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
 }
 
 body {
   margin: 0;
-  padding: 0;
-  width: 100%;
   min-height: 100vh;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  line-height: 1.5;
+  letter-spacing: -0.01em;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease;
+}
+
+#app {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+/* Vuetify'ın kendi zemin ve fontunu sistemimize bağla */
+.v-application {
+  font-family: var(--font) !important;
+  background: var(--bg) !important;
+  color: var(--text) !important;
+}
+
+.v-application .text-h1,
+.v-application .text-h2,
+.v-application .text-h3,
+.v-application .text-h4,
+.v-application .text-h5,
+.v-application .text-h6,
+.v-application .text-body-1,
+.v-application .text-body-2 {
+  font-family: var(--font) !important;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+a:hover {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
+/* ============================================================
+   Düzen
+   ============================================================ */
+
+.container {
+  width: 100%;
+  max-width: var(--container);
+  margin: 0 auto;
+  padding: 0 clamp(1rem, 4vw, 2rem);
+}
+
+.page {
+  padding-top: clamp(2.5rem, 6vw, 4.5rem);
+}
+
+/* ============================================================
+   Tipografi — başlıklar serif, gövde sistem fontu
+   ============================================================ */
+
+.display,
+.h1,
+.h2 {
+  font-family: var(--font-display);
+  font-optical-sizing: auto;
+  color: var(--text);
+  margin: 0;
+}
+
+.display {
+  font-size: clamp(3rem, 9vw, 6.5rem);
+  font-weight: 400;
+  line-height: 1;
+  letter-spacing: -0.03em;
+}
+
+.h1 {
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  font-weight: 450;
+  line-height: 1.06;
+  letter-spacing: -0.025em;
+}
+
+.h2 {
+  font-size: clamp(1.6rem, 3vw, 2.25rem);
+  font-weight: 450;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.lead {
+  font-size: clamp(1.125rem, 2vw, 1.3125rem);
+  line-height: 1.45;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.badge {
+  display: inline-block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  background: var(--border);
+  border-radius: 999px;
+  padding: 0.2rem 0.65rem;
+}
+
+.muted {
+  color: var(--text-muted);
+}
+
+/* ============================================================
+   Butonlar — hap şekli, gölgesiz, zıplamasız
+   ============================================================ */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45rem;
+  font-family: var(--font);
+  font-size: 1rem;
+  font-weight: 500;
+  letter-spacing: -0.01em;
+  line-height: 1;
+  border-radius: 999px;
+  padding: 0.8rem 1.35rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.btn:hover {
+  text-decoration: none;
+}
+
+.btn:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+.btn-primary {
+  color: var(--on-accent);
+  background: var(--accent-solid);
+}
+
+.btn-primary:hover:not(:disabled) {
+  color: var(--on-accent);
+  background: var(--accent-solid-hover);
+}
+
+.btn-secondary {
+  color: var(--accent);
+  background: transparent;
+  border-color: var(--accent);
+}
+
+.btn-secondary:hover:not(:disabled) {
+  color: var(--on-accent);
+  background: var(--accent-solid);
+  border-color: var(--accent-solid);
+}
+
+.btn-ghost {
+  color: var(--text-soft);
+  background: transparent;
+  padding-left: 0.9rem;
+  padding-right: 0.9rem;
+}
+
+.btn-ghost:hover:not(:disabled) {
+  color: var(--text);
+  background: var(--border);
+}
+
+.btn-danger {
+  color: #fff;
+  background: #c4314b;
+}
+
+.btn-danger:hover:not(:disabled) {
+  color: #fff;
+  background: #a8273e;
+}
+
+.btn-sm {
+  font-size: 0.875rem;
+  padding: 0.55rem 1rem;
+}
+
+/* ============================================================
+   Yüzeyler
+   ============================================================ */
+
+.surface {
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+
+/* Buzlu cam. Desteklemeyen ya da şeffaflık azaltma isteyenlerde düz dolgu. */
+.glass {
+  background: var(--glass-bg);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  box-shadow:
+    inset 0 1px 0 var(--glass-edge),
+    0 1px 0 var(--glass-shade);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .glass {
+    background: var(--glass-bg-strong);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glass {
+    background: var(--glass-bg-strong);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+/* ============================================================
+   Formlar
+   ============================================================ */
+
+.field-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-soft);
+  margin-bottom: 0.5rem;
+}
+
+.v-application .v-field {
+  border-radius: var(--radius-sm) !important;
+  background: var(--bg-elevated) !important;
+  font-family: var(--font) !important;
+}
+
+.v-application .v-field__outline {
+  --v-field-border-opacity: 1;
+  color: var(--border-strong);
+}
+
+.v-application .v-field--focused .v-field__outline {
+  color: var(--accent);
+}
+
+.v-application .v-messages__message {
+  font-family: var(--font);
+}
+
+/* ============================================================
+   Makale gövdesi (Quill'den gelen HTML)
+   ============================================================ */
+
+.prose {
+  font-size: 1.1875rem;
+  line-height: 1.7;
+  letter-spacing: -0.005em;
+  color: var(--text-soft);
+}
+
+.prose > * + * {
+  margin-top: 1.25em;
+}
+
+.prose p {
+  margin: 0;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-family: var(--font-display);
+  color: var(--text);
+  font-weight: 500;
+  letter-spacing: -0.015em;
+  line-height: 1.25;
+  margin-top: 2em;
+  margin-bottom: 0.5em;
+}
+
+.prose h1 {
+  font-size: 1.95rem;
+}
+.prose h2 {
+  font-size: 1.6rem;
+}
+.prose h3 {
+  font-size: 1.3rem;
+}
+
+.prose strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.prose a {
+  text-decoration: underline;
+  text-decoration-color: var(--accent-glow);
+  text-underline-offset: 0.2em;
+}
+
+.prose blockquote {
+  margin: 1.8em 0;
+  padding: 0.1em 0 0.1em 1.25rem;
+  border-left: 2px solid var(--accent);
+  font-family: var(--font-display);
+  font-size: 1.25em;
+  line-height: 1.5;
+  color: var(--text);
+}
+
+.prose img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius);
+  margin: 2em 0;
+}
+
+.prose ul,
+.prose ol {
+  padding-left: 1.4rem;
+}
+
+.prose li + li {
+  margin-top: 0.4em;
+}
+
+.prose li::marker {
+  color: var(--text-muted);
+}
+
+.prose pre {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.65;
+  color: #e8e8ed;
+  background: #1c1c1e;
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  overflow-x: auto;
+}
+
+.prose code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  color: var(--text);
+  background: var(--border);
+  border-radius: 6px;
+  padding: 0.1em 0.35em;
+}
+
+.prose pre code {
+  color: inherit;
+  background: none;
+  padding: 0;
+}
+
+.prose hr {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 2.5em 0;
+}
+
+/* ============================================================
+   Quill editörü — iki temada da okunur
+   ============================================================ */
+
+.editor-box {
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--bg-elevated);
+  overflow: hidden;
+}
+
+.editor-box .ql-toolbar.ql-snow {
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg);
+  font-family: var(--font);
+}
+
+.editor-box .ql-container.ql-snow {
+  border: 0;
+  font-family: var(--font);
+  font-size: 1.0625rem;
+  color: var(--text);
+}
+
+.editor-box .ql-editor {
+  min-height: 22rem;
+  line-height: 1.75;
+}
+
+.editor-box .ql-editor.ql-blank::before {
+  color: var(--text-muted);
+  font-style: normal;
+}
+
+.editor-box .ql-snow .ql-stroke {
+  stroke: var(--text-soft);
+}
+
+.editor-box .ql-snow .ql-fill {
+  fill: var(--text-soft);
+}
+
+.editor-box .ql-snow .ql-picker {
+  color: var(--text-soft);
+}
+
+.editor-box .ql-snow .ql-picker-options {
+  background: var(--bg-elevated);
+  border-color: var(--border);
+}
+
+.editor-box .ql-snow button:hover .ql-stroke,
+.editor-box .ql-snow .ql-active .ql-stroke {
+  stroke: var(--accent);
+}
+
+.editor-box .ql-snow button:hover .ql-fill,
+.editor-box .ql-snow .ql-active .ql-fill {
+  fill: var(--accent);
+}
+
+/* ============================================================
+   Erişilebilirlik
+   ============================================================ */
+
+/* Hareket hassasiyeti olanlar için geçiş ve animasyon yok */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+::selection {
+  background: var(--accent-glow);
+}
+
+/* ============================================================
+   Dar form sayfaları (giriş, kayıt, iletişim) — ortak düzen
+   ============================================================ */
+
+.form-page {
+  padding: clamp(3rem, 8vw, 5.5rem) clamp(1rem, 4vw, 2rem) 2rem;
+}
+
+.form-card {
+  max-width: 28rem;
+  margin: 0 auto;
+  padding: clamp(1.75rem, 5vw, 2.75rem);
+}
+
+.form-card--wide {
+  max-width: 38rem;
+}
+
+.form-card .btn-block {
+  width: 100%;
+}
+
+.form-alt {
+  font-size: 0.9375rem;
+  color: var(--text-muted);
+  text-align: center;
+  margin: 1.5rem 0 0;
 }

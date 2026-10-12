@@ -1,13 +1,13 @@
-import './assets/main.css'
-// Vuetify 3'ün kendi stilleri
+// Sıra önemli: kendi tasarım sistemimiz Vuetify'dan SONRA yüklenmeli ki eşit
+// öncelikteki kuralarda kazansın. (Önce yüklenince Vuetify'ın [type=submit]
+// sıfırlaması form butonlarının beyaz yazısını eziyordu.)
 import 'vuetify/styles'
-// İkonların görünmesi için gerekli CSS (mdi-domain yazısı yerine ikon çıkması için)
 import '@mdi/font/css/materialdesignicons.css'
+import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
-// Vuetify Kurulum Parçaları
 import { createVuetify } from 'vuetify'
 import * as components from 'vuetify/components'
 import * as directives from 'vuetify/directives'
@@ -15,27 +15,65 @@ import * as directives from 'vuetify/directives'
 import App from './App.vue'
 import router from './router'
 
-// Vuetify Ayarlarını Yapılandırıyoruz
+/**
+ * Vuetify temaları. Renkler main.css'teki token'larla aynı;
+ * Vuetify bileşenleri (form alanı, menü, uyarı) de aynı paleti kullansın diye.
+ */
+const light = {
+  dark: false,
+  colors: {
+    background: '#F5F5F7',
+    surface: '#FFFFFF',
+    'surface-variant': '#EBEBEF',
+    primary: '#0A5C7A',
+    secondary: '#1D1D1F',
+    error: '#C4314B',
+    success: '#2E7D4F',
+    warning: '#B26A00',
+    info: '#0A5C7A',
+  },
+}
+
+const dark = {
+  dark: true,
+  colors: {
+    background: '#000000',
+    surface: '#1C1C1E',
+    'surface-variant': '#2C2C2E',
+    primary: '#5FB4D0',
+    secondary: '#F5F5F7',
+    error: '#FF6B81',
+    success: '#5CC98A',
+    warning: '#F0B44C',
+    info: '#5FB4D0',
+  },
+}
+
 const vuetify = createVuetify({
   components,
   directives,
-  icons: {
-    defaultSet: 'mdi', // İkon seti olarak MDI kullanılsın
-  },
+  icons: { defaultSet: 'mdi' },
   theme: {
-    defaultTheme: 'light', // Varsayılan tema (Login ekranında dark kullanıyoruz ama genel tema light kalabilir)
+    // index.html sayfa boyanmadan önce temayı <html data-theme> olarak ayarlıyor
+    defaultTheme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
+    themes: { light, dark },
+  },
+  defaults: {
+    VTextField: { variant: 'outlined', density: 'comfortable' },
+    VTextarea: { variant: 'outlined', density: 'comfortable' },
+    VAlert: { variant: 'tonal', rounded: 'lg' },
   },
 })
 
 const app = createApp(App)
 
+// Pinia router'dan önce gelmeli: router guard'ı auth store'u kullanıyor
 app.use(createPinia())
-app.use(router)
 app.use(router)
 app.use(vuetify)
 
 import { QuillEditor } from '@vueup/vue-quill'
-import '@vueup/vue-quill/dist/vue-quill.snow.css';
+import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
 app.component('QuillEditor', QuillEditor)
 
