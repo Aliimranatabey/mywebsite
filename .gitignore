@@ -1,0 +1,11 @@
+# Gizli bilgiler — asla commit'lenmemeli
+.env
+
+# macOS
+.DS_Store
+
+# Build çıktıları
+backend/target/
+backend/uploads/
+frontend/dist/
+frontend/node_modules/
