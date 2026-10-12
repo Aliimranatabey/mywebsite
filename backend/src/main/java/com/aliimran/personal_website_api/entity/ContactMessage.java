@@ -1,6 +1,9 @@
 package com.aliimran.personal_website_api.entity;
 
 import jakarta.persistence.*;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
 @Entity
@@ -11,10 +14,19 @@ public class ContactMessage {
   @GeneratedValue(strategy = GenerationType.IDENTITY)
   private Long id;
 
+  @NotBlank(message = "İsim zorunludur")
+
+  @Size(max = 100, message = "İsim en fazla 100 karakter olabilir")
+
   private String name;
+  @NotBlank(message = "E-posta zorunludur")
+  @Email(message = "Geçerli bir e-posta giriniz")
+  @Size(max = 200, message = "E-posta en fazla 200 karakter olabilir")
   private String email;
 
   @Column(columnDefinition = "TEXT")
+  @NotBlank(message = "Mesaj zorunludur")
+  @Size(max = 5000, message = "Mesaj en fazla 5000 karakter olabilir")
   private String message;
 
   private LocalDateTime createdAt;

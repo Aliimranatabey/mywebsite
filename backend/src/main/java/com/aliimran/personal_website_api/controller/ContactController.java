@@ -2,19 +2,37 @@ package com.aliimran.personal_website_api.controller;
 
 import com.aliimran.personal_website_api.entity.ContactMessage;
 import com.aliimran.personal_website_api.service.ContactService;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.Valid;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/contact")
 public class ContactController {
 
-    @Autowired
-    private ContactService contactService;
+  private final ContactService contactService;
 
-    // İletişim mesajı gönder
-    @PostMapping
-    public ContactMessage sendMessage(@RequestBody ContactMessage message) {
-        return contactService.saveMessage(message);
-    }
+  public ContactController(ContactService contactService) {
+    this.contactService = contactService;
+  }
+
+  /**
+   * İletişim mesajı gönderir.
+   *
+   * Yanıt mailSent alanını içerir: mesaj her durumda veritabanına kaydedilir,
+   * ama mail gönderilemediyse frontend bunu kullanıcıya dürüstçe söyler.
+   */
+  @PostMapping
+  public ResponseEntity<Map<String, Object>> sendMessage(@Valid @RequestBody ContactMessage message) {
+    boolean mailSent = contactService.saveMessage(message);
+
+    return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
+        "message", mailSent
+            ? "Mesajınız iletildi, en kısa sürede dönüş yapacağım."
+            : "Mesajınız kaydedildi. (E-posta bildirimi şu anda gönderilemedi, mesajınız kaybolmadı.)",
+        "mailSent", mailSent));
+  }
 }
