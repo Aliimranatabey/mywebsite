@@ -2,6 +2,8 @@
 # Sunucuyu siteye hazırlar. Yeni bir Ubuntu sunucuda, root olarak, BİR KERE çalıştırılır:
 #   cd /root/mywebsite && bash deploy/kurulum.sh
 # Tekrar çalıştırmak zararsızdır: yapılmış adımları atlar.
+# Soru sormadan çalıştırmak için değerleri baştan ver:
+#   DOMAIN=... MAIL_USERNAME=... MAIL_PASSWORD=... bash deploy/kurulum.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -28,12 +30,11 @@ adim "3/7 Swap (yedek bellek) açılıyor"
 # Java derlemesi küçük sunucularda belleği aşabiliyor; swap bunu önler
 if swapon --show | grep -q .; then
   echo "Swap zaten var"
-else
-  fallocate -l 2G /swapfile
-  chmod 600 /swapfile
-  mkswap /swapfile
-  swapon /swapfile
+elif fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile; then
   echo '/swapfile none swap sw 0 0' >> /etc/fstab
+else
+  rm -f /swapfile
+  echo "UYARI: swap açılamadı (sunucu KVM değil olabilir). Derleme bellek yetmezse hata verebilir."
 fi
 
 adim "4/7 Güvenlik duvarı: sadece SSH, HTTP, HTTPS açık"
@@ -66,10 +67,13 @@ adim "7/7 .env dosyası ve günlük yedek"
 if [ -f .env ]; then
   echo ".env zaten var, dokunulmadı"
 else
-  read -rp "Alan adın (örn. aliimranatabey.com, www olmadan): " DOMAIN
-  read -rp "Mail gönderecek Gmail adresi: " MAIL_USERNAME
-  read -rsp "Gmail uygulama şifresi (16 harf, yazarken görünmez): " MAIL_PASSWORD; echo
-  read -rp "Mesajlar hangi adrese gelsin [$MAIL_USERNAME]: " CONTACT_RECIPIENT
+  DOMAIN="${DOMAIN:-}"; MAIL_USERNAME="${MAIL_USERNAME:-}"
+  MAIL_PASSWORD="${MAIL_PASSWORD-__sor__}"; CONTACT_RECIPIENT="${CONTACT_RECIPIENT:-}"
+  [ -n "$DOMAIN" ] || read -rp "Alan adın (örn. aliimranatabey.com, www olmadan): " DOMAIN
+  [ -n "$MAIL_USERNAME" ] || read -rp "Mail gönderecek Gmail adresi: " MAIL_USERNAME
+  if [ "$MAIL_PASSWORD" = "__sor__" ]; then
+    read -rsp "Gmail uygulama şifresi (16 harf, yazarken görünmez; sonra eklemek için boş bırak): " MAIL_PASSWORD; echo
+  fi
   CONTACT_RECIPIENT="${CONTACT_RECIPIENT:-$MAIL_USERNAME}"
   cat > .env <<EOF
 # deploy/kurulum.sh tarafından oluşturuldu
