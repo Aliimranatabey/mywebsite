@@ -12,7 +12,11 @@ import jakarta.validation.constraints.Size;
 public record BlogPostRequest(
     @NotBlank(message = "Başlık zorunludur") @Size(max = 200, message = "Başlık en fazla 200 karakter olabilir") String title,
 
-    @NotBlank(message = "İçerik zorunludur") String content,
+    /*
+     * Sınırsız içerik, birkaç dev yazıyla diski ve yazı listesini (her kart tam
+     * içeriği taşıyor) şişirmeye izin veriyordu. Base64 gömülü resimlere yer kalsın diye 2 MB.
+     */
+    @NotBlank(message = "İçerik zorunludur") @Size(max = 2_000_000, message = "İçerik çok uzun (en fazla ~2 MB)") String content,
 
     @Size(max = 60, message = "Kategori en fazla 60 karakter olabilir") String category,
 

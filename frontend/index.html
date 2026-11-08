@@ -12,30 +12,21 @@
       content="Ali İmran Atabey — yazılım, teknoloji ve hayat üzerine yazılar."
     />
 
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300..600&display=swap"
-      rel="stylesheet"
+    <!-- Bağlantı WhatsApp/LinkedIn/X'te paylaşılınca görünen önizleme.
+         __SITE_URL__ yerine nginx o anki adresi yazar (nginx.conf → sub_filter). -->
+    <meta property="og:type" content="website" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:site_name" content="Ali İmran Atabey" />
+    <meta property="og:title" content="Ali İmran Atabey" />
+    <meta
+      property="og:description"
+      content="Yazılım, teknoloji ve hayat üzerine yazılar."
     />
+    <meta property="og:url" content="__SITE_URL__/" />
+    <meta property="og:image" content="__SITE_URL__/apple-touch-icon.png" />
+    <meta name="twitter:card" content="summary" />
 
-    <script>
-      // Tema sayfa boyanmadan önce belirlensin, açık/koyu arasında parlama olmasın.
-      // Önce kullanıcının seçimi, yoksa işletim sisteminin ayarı.
-      ;(function () {
-        var theme = 'light'
-        try {
-          var saved = localStorage.getItem('theme')
-          if (saved === 'light' || saved === 'dark') theme = saved
-          else if (window.matchMedia('(prefers-color-scheme: dark)').matches) theme = 'dark'
-        } catch (e) {
-          if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
-            theme = 'dark'
-          }
-        }
-        document.documentElement.dataset.theme = theme
-      })()
-    </script>
+    <script src="/theme-init.js"></script>
 
     <style>
       html,

@@ -46,7 +46,7 @@
     <section id="egitim" class="section">
       <h2 class="h2 section-title">Eğitim</h2>
       <div class="surface edu">
-        <span class="mdi mdi-school-outline edu-icon" aria-hidden="true"></span>
+        <AppIcon name="school-outline" class="edu-icon" />
         <div>
           <h3 class="tl-title">Fırat Üniversitesi</h3>
           <p class="tl-role">Yazılım Mühendisliği · 2019 — 2023</p>
@@ -75,6 +75,7 @@
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import AuthorAvatar from '@/components/AuthorAvatar.vue'
 
 // Özgeçmiş içeriği veri olarak duruyor; şablon tekrarı olmadan tek yerden düzenlenir

@@ -1,0 +1,16 @@
+# Caddy: sitenin internete bakan kapısı. HTTPS sertifikasını Let's Encrypt'ten
+# kendisi alır, süresi dolmadan yeniler, http:// isteklerini https://'e yönlendirir.
+# {$DOMAIN} değeri .env'deki DOMAIN satırından gelir (docker-compose.yml).
+
+# www ile gelenleri tek adrese topla (arama motorları iki ayrı site sanmasın)
+www.{$DOMAIN} {
+	redir https://{$DOMAIN}{uri} permanent
+}
+
+{$DOMAIN} {
+	# Sayfaları sıkıştırarak gönder (JS/CSS ~%70 küçülür)
+	encode zstd gzip
+
+	# Asıl site: frontend container'ındaki nginx (o da /api'yi backend'e iletir)
+	reverse_proxy frontend:80
+}

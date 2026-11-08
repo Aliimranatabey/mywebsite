@@ -22,6 +22,7 @@ import org.springframework.security.web.context.HttpSessionSecurityContextReposi
 import org.springframework.security.web.context.SecurityContextRepository;
 import org.springframework.security.web.csrf.CsrfToken;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Map;
 import org.springframework.web.bind.annotation.*;
 
@@ -36,6 +37,12 @@ public class AuthController {
   public AuthController(AuthService authService, AuthenticationManager authenticationManager) {
     this.authService = authService;
     this.authenticationManager = authenticationManager;
+  }
+
+  /** Kayıt açık mı; kapalıyken frontend "Yazmaya başla" bağlantılarını gizler. */
+  @GetMapping("/registration")
+  public Map<String, Boolean> registration() {
+    return Map.of("enabled", authService.isRegistrationEnabled());
   }
 
   /** Kayıt olur ve ardından otomatik giriş yapar. */
@@ -96,8 +103,19 @@ public class AuthController {
   private AppUserDetails authenticate(String email, String password,
       HttpServletRequest request, HttpServletResponse response) {
 
+    // BCrypt 72 bayttan uzununu işleyemez; kontrol etmezsek 500 dönüyordu
+    if (password.getBytes(StandardCharsets.UTF_8).length > AuthService.MAX_PASSWORD_BYTES) {
+      throw new BadCredentialsException("Şifre çok uzun");
+    }
+
     Authentication authentication = authenticationManager.authenticate(
         new UsernamePasswordAuthenticationToken(email, password));
+
+    // Session fixation: girişten önce elde edilmiş (ya da kurbana dayatılmış)
+    // oturum kimliği girişten sonra geçersiz olsun
+    if (request.getSession(false) != null) {
+      request.changeSessionId();
+    }
 
     SecurityContext context = SecurityContextHolder.createEmptyContext();
     context.setAuthentication(authentication);

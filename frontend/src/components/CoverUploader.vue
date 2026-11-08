@@ -29,7 +29,7 @@
     >
       <v-progress-circular v-if="uploading" indeterminate color="primary" size="28" />
       <template v-else>
-        <span class="drop-icon mdi mdi-image-plus-outline" aria-hidden="true"></span>
+        <AppIcon name="image-plus-outline" class="drop-icon" />
         <p class="drop-title">Kapak görseli ekle</p>
         <p class="drop-hint">Sürükleyip bırak ya da tıkla · JPG, PNG, WEBP · en fazla 5 MB</p>
         <p class="drop-hint">Eklemezsen yazıdaki ilk resim kapak olur.</p>
@@ -49,6 +49,7 @@
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import { ref } from 'vue'
 import api from '@/services/api'
 

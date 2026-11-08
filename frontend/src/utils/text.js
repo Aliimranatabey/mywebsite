@@ -4,9 +4,10 @@
 export function excerpt(html, maxLength = 180) {
   if (!html) return ''
 
-  const div = document.createElement('div')
-  div.innerHTML = html
-  const text = (div.textContent || '').replace(/\s+/g, ' ').trim()
+  // DOMParser'ın ürettiği belge etkisizdir: içindeki <img onerror> gibi şeyler çalışmaz.
+  // (innerHTML'li bir div'de resimler yüklenir ve olay nitelikleri tetiklenirdi.)
+  const doc = new DOMParser().parseFromString(html, 'text/html')
+  const text = (doc.body.textContent || '').replace(/\s+/g, ' ').trim()
 
   if (text.length <= maxLength) return text
   // Kelimenin ortasında kesmemek için son boşluktan kırp

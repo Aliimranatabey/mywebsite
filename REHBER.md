@@ -41,7 +41,7 @@ docker compose down              # durdur (veriler silinmez)
 |---|---|
 | Site | http://localhost:8090 |
 | Backend API (doğrudan) | http://localhost:8091/api |
-| pgAdmin | http://localhost:5051 (admin@admin.com / admin) |
+| pgAdmin | http://localhost:5051 (admin@admin.com / admin). Sadece `COMPOSE_PROFILES=dev docker compose up -d` ile açılır |
 | PostgreSQL (dışarıdan) | localhost:5433 (devuser / devpass, veritabanı: personal_site) |
 
 > **Şu anki durum (Ekim 2026):** veritabanında 11 yazı var ama **hiç kullanıcı yok** ve
@@ -151,7 +151,8 @@ mywebsite/
 | Servis | İmaj | Dışarıya açık port | Ne yapar |
 |---|---|---|---|
 | `postgres` | postgres:16 | 5433 → 5432 | Veritabanı. Veriler `personal_website_data` volume'ünde. |
-| `pgadmin` | dpage/pgadmin4:8 | 5051 → 80 | Veritabanına görsel arayüz. Sadece geliştirme için. |
+| `pgadmin` | dpage/pgadmin4:8 | 5051 → 80 | Veritabanına görsel arayüz. Sadece `dev` profilinde açılır. |
+| `caddy` | caddy:2 | 80, 443 | HTTPS kapısı. Sadece sunucuda (`prod` profili, Caddyfile). |
 | `backend` | `./backend`'den derlenir | 8091 → 8080 | Spring Boot API. Görseller `personal_website_uploads` volume'ünde. |
 | `frontend` | `./frontend`'den derlenir | 8090 → 80 | nginx: Vue uygulamasını sunar, `/api`'yi backend'e iletir. |
 
@@ -705,7 +706,9 @@ docker compose up -d --build backend    # sadece backend
 
 ### 8.1 Kendi hesabını açıp eski yazıları sahiplenmek
 
-1. Sitede **Yazmaya başla** → kayıt ol.
+1. Kayıt varsayılan olarak kapalı. Kök dizindeki `.env`'e `REGISTRATION_ENABLED=true`
+   yaz, `docker compose up -d backend` çalıştır, sitede **Yazmaya başla** → kayıt ol.
+   Sonra satırı sil (ya da `false` yap) ve aynı komutu tekrar çalıştır.
 2. Mevcut 11 yazıyı kendine bağla:
    ```bash
    docker compose exec -T postgres psql -U devuser -d personal_site -c \
@@ -778,7 +781,7 @@ select * from contact_messages order by created_at desc;  -- iletişim mesajlar�
 
 ### pgAdmin ile
 
-1. http://localhost:5051 → admin@admin.com / admin
+1. `COMPOSE_PROFILES=dev docker compose up -d` (pgAdmin varsayılan olarak kapalı), sonra http://localhost:5051 → admin@admin.com / admin
 2. Servers → Register → Server
    - Name: `personal_website`
    - Connection: Host `postgres`, Port `5432`, Database `personal_site`, Username
@@ -805,10 +808,8 @@ Sitenin çalışmasını engellemiyorlar ama bilmen iyi olur.
 
 | Konu | Nerede | Not |
 |---|---|---|
-| Kayıt herkese açık | `SecurityConfig`, `RegisterView` | Herkes hesap açıp yazı yayınlayabilir ve yazısı ana sayfada çıkabilir. Kişisel site için kayıt kapatılmalı ya da onaya bağlanmalı. |
-| Çift CORS tanımı | `config/WebConfig.java` | `CorsConfig` zaten ortam değişkeninden okuyor; `WebConfig`'teki sabit `localhost:5173` tanımı gereksiz. Silinebilir. |
+| Kayıt sayfası görünüyor | `RegisterView`, menü | Kayıt backend'de kapalı (`REGISTRATION_ENABLED=false`); sayfa açılır ama "kayıt kapalı" mesajı döner. İstersen bağlantılar menüden kaldırılabilir. |
 | Kullanılmayan etiket tabloları | `tags`, `post_tags`, `entity/Tag.java` | V1'den kalma, hiçbir yerde kullanılmıyor. |
-| SQL logları açık | `spring.jpa.show-sql=true` | Canlıda log dosyasını şişirir; kapat. |
 | Resimler yazının içinde gömülü | Quill → base64 | Resimli yazılar veritabanında büyük yer kaplar ve liste cevabını ağırlaştırır. İleride resimleri de `/api/uploads`'a taşımak iyi olur. |
 | Node 25 + devtools eklentisi | `vite-plugin-vue-devtools` | 8.2.1'e yükseltildi; sorun yok. Tekrar çıkarsa: `NODE_OPTIONS=--no-webstorage npm run dev`. |
 

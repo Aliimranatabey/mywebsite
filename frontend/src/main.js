@@ -2,15 +2,17 @@
 // öncelikteki kuralarda kazansın. (Önce yüklenince Vuetify'ın [type=submit]
 // sıfırlaması form butonlarının beyaz yazısını eziyordu.)
 import 'vuetify/styles'
-import '@mdi/font/css/materialdesignicons.css'
+// Başlık fontu kendi sunucumuzdan: Google Fonts ziyaretçinin IP'sini Google'a gönderiyordu (KVKK)
+import '@fontsource-variable/fraunces/opsz.css'
 import './assets/main.css'
 
 import { createApp } from 'vue'
 import { createPinia } from 'pinia'
 
 import { createVuetify } from 'vuetify'
-import * as components from 'vuetify/components'
-import * as directives from 'vuetify/directives'
+// Bileşenler tek tek, kullanıldıkları yerde yüklenir (vite.config.js → vuetify autoImport).
+// Eskiden hepsi birden pakete giriyordu: ~600 KB fazladan JS ve CSS.
+import { aliases, mdi } from 'vuetify/iconsets/mdi-svg'
 
 import App from './App.vue'
 import router from './router'
@@ -50,9 +52,8 @@ const dark = {
 }
 
 const vuetify = createVuetify({
-  components,
-  directives,
-  icons: { defaultSet: 'mdi' },
+  // Vuetify'ın kendi ikonları (uyarı, kapat vb.) SVG olarak; ikon fontu yüklenmiyor
+  icons: { defaultSet: 'mdi', aliases, sets: { mdi } },
   theme: {
     // index.html sayfa boyanmadan önce temayı <html data-theme> olarak ayarlıyor
     defaultTheme: document.documentElement.dataset.theme === 'dark' ? 'dark' : 'light',
@@ -71,10 +72,5 @@ const app = createApp(App)
 app.use(createPinia())
 app.use(router)
 app.use(vuetify)
-
-import { QuillEditor } from '@vueup/vue-quill'
-import '@vueup/vue-quill/dist/vue-quill.snow.css'
-
-app.component('QuillEditor', QuillEditor)
 
 app.mount('#app')

@@ -56,6 +56,34 @@ class HtmlSanitizerTest {
   }
 
   @Test
+  @DisplayName("sayfayı kaplayan style atılır, Quill rengi kalır")
+  void filtersStyles() {
+    String clean = HtmlSanitizer.clean(
+        "<p style=\"position:fixed;top:0;z-index:9999\">sahte</p>"
+            + "<span style=\"color: rgb(230, 0, 0); position: absolute\">kırmızı</span>");
+
+    assertFalse(clean.contains("position"));
+    assertFalse(clean.contains("z-index"));
+    assertTrue(clean.contains("color: rgb(230, 0, 0)"));
+  }
+
+  @Test
+  @DisplayName("sadece ql-* sınıfları kalır")
+  void filtersClasses() {
+    String clean = HtmlSanitizer.clean("<p class=\"ql-align-center v-btn\">x</p><span class=\"nav\">y</span>");
+
+    assertTrue(clean.contains("class=\"ql-align-center\""));
+    assertFalse(clean.contains("v-btn"));
+    assertFalse(clean.contains("nav"));
+  }
+
+  @Test
+  @DisplayName("bağlantılara nofollow eklenir")
+  void addsNofollow() {
+    assertTrue(HtmlSanitizer.clean("<a href=\"https://ornek.com\">x</a>").contains("nofollow"));
+  }
+
+  @Test
   @DisplayName("null güvenli")
   void handlesNull() {
     assertNull(HtmlSanitizer.clean(null));

@@ -15,11 +15,24 @@ export const useAuthStore = defineStore('auth', () => {
   // Uygulama açılışında oturum kontrolü bitti mi (rota koruması bunu bekler)
   const initialized = ref(false)
 
+  // Kayıt kapalıyken (canlıda varsayılan) "Yazmaya başla" bağlantıları gizlenir
+  const registrationOpen = ref(false)
+
   const isLoggedIn = computed(() => user.value !== null)
+
+  /** Yazı yazmaya giden bağlantı; gidilecek yer yoksa null. */
+  const writeLink = computed(() => {
+    if (isLoggedIn.value) return '/blog/new'
+    return registrationOpen.value ? '/register' : null
+  })
 
   /** Sayfa yenilendiğinde oturumu sunucudan geri kurar. */
   async function restore() {
     if (initialized.value) return
+    api
+      .registrationStatus()
+      .then(({ data }) => (registrationOpen.value = data?.enabled === true))
+      .catch(() => {})
     try {
       // CSRF çerezini baştan al: yazma işlemleri bu token olmadan 403 alır
       await api.primeCsrf().catch(() => {})
@@ -66,5 +79,16 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
-  return { user, loading, initialized, isLoggedIn, restore, login, register, logout }
+  return {
+    user,
+    loading,
+    initialized,
+    isLoggedIn,
+    registrationOpen,
+    writeLink,
+    restore,
+    login,
+    register,
+    logout,
+  }
 })

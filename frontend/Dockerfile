@@ -2,7 +2,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 COPY package*.json ./
-RUN npm install
+# package-lock.json'daki sürümler birebir kurulsun
+RUN npm ci
 COPY . .
 RUN npm run build
 

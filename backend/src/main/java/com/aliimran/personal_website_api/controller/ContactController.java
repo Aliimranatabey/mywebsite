@@ -1,5 +1,6 @@
 package com.aliimran.personal_website_api.controller;
 
+import com.aliimran.personal_website_api.dto.ContactRequest;
 import com.aliimran.personal_website_api.entity.ContactMessage;
 import com.aliimran.personal_website_api.service.ContactService;
 import jakarta.validation.Valid;
@@ -26,8 +27,9 @@ public class ContactController {
    * ama mail gönderilemediyse frontend bunu kullanıcıya dürüstçe söyler.
    */
   @PostMapping
-  public ResponseEntity<Map<String, Object>> sendMessage(@Valid @RequestBody ContactMessage message) {
-    boolean mailSent = contactService.saveMessage(message);
+  public ResponseEntity<Map<String, Object>> sendMessage(@Valid @RequestBody ContactRequest request) {
+    boolean mailSent = contactService.saveMessage(
+        new ContactMessage(request.name().trim(), request.email().trim(), request.message()));
 
     return ResponseEntity.status(HttpStatus.CREATED).body(Map.of(
         "message", mailSent

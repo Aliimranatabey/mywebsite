@@ -51,6 +51,7 @@
 </template>
 
 <script setup>
+import QuillEditor from '@/components/QuillEditorLazy'
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import api from '@/services/api'

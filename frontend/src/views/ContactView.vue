@@ -28,6 +28,17 @@
           {{ loading ? 'Gönderiliyor…' : 'Gönder' }}
         </button>
       </v-form>
+
+      <!-- KVKK md. 10 aydınlatma: kim, ne için, kime aktarılıyor, hakların neler -->
+      <p class="privacy">
+        <strong>Kişisel verilerin hakkında:</strong> Adın, e-postan ve mesajın, veri sorumlusu
+        olarak Ali İmran Atabey tarafından yalnızca sana dönüş yapmak için işlenir. Mesaj bu
+        sitenin veritabanında en fazla 1 yıl saklanıp silinir ve Google'ın e-posta hizmeti (Gmail) üzerinden bana
+        iletilir; bu nedenle verin yurt dışındaki sunuculara aktarılabilir. Başka hiçbir amaçla
+        kullanılmaz, kimseyle paylaşılmaz. Formu göndererek buna onay vermiş olursun.
+        KVKK'nın 11. maddesindeki haklarını (öğrenme, düzeltme, silme vb.) kullanmak için bana
+        bu form üzerinden ya da e-postayla yazabilirsin.
+      </p>
     </div>
   </div>
 </template>
@@ -63,6 +74,18 @@ const submitForm = async () => {
 </script>
 
 <style scoped>
+.privacy {
+  margin: 1.5rem 0 0;
+  font-size: 0.75rem;
+  line-height: 1.55;
+  color: var(--text-muted);
+}
+
+.privacy strong {
+  color: var(--text);
+  font-weight: 600;
+}
+
 .field-row {
   display: grid;
   grid-template-columns: 1fr 1fr;

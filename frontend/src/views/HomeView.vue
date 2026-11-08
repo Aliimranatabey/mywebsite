@@ -28,7 +28,7 @@
     <div v-else-if="posts.length === 0" class="container state">
       <h2 class="h2">Henüz yazı yok</h2>
       <p class="muted mt-2">İlk yazıyı sen yaz.</p>
-      <router-link :to="auth.isLoggedIn ? '/blog/new' : '/register'" class="btn btn-primary mt-6">
+      <router-link v-if="auth.writeLink" :to="auth.writeLink" class="btn btn-primary mt-6">
         Yazmaya başla
       </router-link>
     </div>

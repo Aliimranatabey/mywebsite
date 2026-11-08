@@ -50,7 +50,13 @@ public class RateLimitFilter extends OncePerRequestFilter {
       return;
     }
 
-    if (isOverLimit(clientIp(request) + "|" + endpoint, limit)) {
+    /*
+     * X-Forwarded-For'un ilk değerini okumak güvenli değildi: ziyaretçi bu
+     * header'ı kendisi yazıp her istekte farklı IP gösterebiliyordu.
+     * server.forward-headers-strategy=native ile Tomcat zinciri sağdan okur,
+     * sadece iç ağdaki proxy'leri (nginx, Caddy) atlar; getRemoteAddr() gerçek IP'dir.
+     */
+    if (isOverLimit(request.getRemoteAddr() + "|" + endpoint, limit)) {
       response.setStatus(HttpStatus.TOO_MANY_REQUESTS.value());
       response.setContentType(MediaType.APPLICATION_JSON_VALUE);
       response.setCharacterEncoding("UTF-8");
@@ -73,15 +79,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
     });
 
     return counter.count().incrementAndGet() > limit;
-  }
-
-  private String clientIp(HttpServletRequest request) {
-    // Nginx arkasında çalıştığımız için gerçek IP bu header'da gelir
-    String forwarded = request.getHeader("X-Forwarded-For");
-    if (forwarded != null && !forwarded.isBlank()) {
-      return forwarded.split(",")[0].trim();
-    }
-    return request.getRemoteAddr();
   }
 
   /**

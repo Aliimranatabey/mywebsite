@@ -32,7 +32,7 @@
         </button>
       </v-form>
 
-      <p class="form-alt">
+      <p v-if="auth.registrationOpen" class="form-alt">
         Hesabın yok mu? <router-link to="/register">Kayıt ol</router-link>
       </p>
     </div>

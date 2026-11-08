@@ -39,11 +39,7 @@
             :title="isDark ? 'Açık tema' : 'Koyu tema'"
             @click="toggle"
           >
-            <span
-              class="mdi"
-              :class="isDark ? 'mdi-white-balance-sunny' : 'mdi-moon-waning-crescent'"
-              aria-hidden="true"
-            ></span>
+            <AppIcon :name="isDark ? 'white-balance-sunny' : 'moon-waning-crescent'" />
           </button>
 
           <v-menu v-if="auth.isLoggedIn" location="bottom end" offset="10">
@@ -93,7 +89,7 @@
             <div class="fly-col fly-col--main" style="--i: 0">
               <p class="fly-label">Yazılar</p>
               <router-link to="/blog" class="fly-big">Tüm yazılar</router-link>
-              <router-link :to="auth.isLoggedIn ? '/blog/new' : '/register'" class="fly-big">
+              <router-link v-if="auth.writeLink" :to="auth.writeLink" class="fly-big">
                 {{ auth.isLoggedIn ? 'Yeni yazı' : 'Yazmaya başla' }}
               </router-link>
             </div>
@@ -149,7 +145,14 @@
           </template>
           <template v-else>
             <router-link to="/login" class="sheet-small" style="--i: 4">Giriş yap</router-link>
-            <router-link to="/register" class="sheet-small" style="--i: 5">Yazmaya başla</router-link>
+            <router-link
+              v-if="auth.registrationOpen"
+              to="/register"
+              class="sheet-small"
+              style="--i: 5"
+            >
+              Yazmaya başla
+            </router-link>
           </template>
         </div>
       </nav>
@@ -165,6 +168,7 @@
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import { ref, computed, watch, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'

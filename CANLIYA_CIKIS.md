@@ -1,5 +1,8 @@
 # Siteyi Canlıya Çıkarma Rehberi
 
+> **Kısa yol:** Hetzner + Cloudflare ile adım adım kurulum için [deploy/YAYINLA.md](deploy/YAYINLA.md).
+> Bu doküman seçeneklerin ve ayrıntıların uzun açıklaması.
+
 Bu doküman, şu an sadece kendi bilgisayarında çalışan siteyi internete açmak için
 seçeneklerini ve her birinin adımlarını anlatır.
 
@@ -45,98 +48,63 @@ Sahipsiz yazılar (seed verisinden gelenler) aksi halde arayüzden düzenlenemez
 > Yani sahte e-postayla hesap açılabilir ve şifresini unutan kullanıcı giremez.
 > Kişisel blog için kabul edilebilir, ama gerçek bir üyelik sistemi istiyorsan bunlar eklenmeli.
 
-### 0.2 Veritabanı şifresini değiştir
+### 0.2 Veritabanı şifresi
 
-Şu an `docker-compose.yml` içinde açık açık yazıyor: `devuser` / `devpass`.
-Bu şifreler internette dolaşan tarama botlarının ilk denediği şifrelerdendir.
-
-Uzun ve rastgele bir şifre üret:
+`docker-compose.yml` şifreyi `.env`'deki `POSTGRES_PASSWORD`'den okur; boşsa lokal
+geliştirme şifresi `devpass` kullanılır. Sunucuda mutlaka doldur (Bölüm 2.5):
 
 ```bash
 openssl rand -base64 24
 ```
 
-Çıkan değeri sunucudaki `.env` dosyana yaz, `docker-compose.yml` içindeki sabit
-`devpass` yazılarını `${POSTGRES_PASSWORD}` gibi değişkenlerle değiştir.
-
 > ⚠️ PostgreSQL imajı `POSTGRES_PASSWORD`'ü **sadece veritabanı ilk kez kurulurken**
-> (volume boşken) kullanır. Volume zaten doluysa `.env`'deki şifreyi değiştirmek bir şey
-> yapmaz; şifreyi veritabanının içinden değiştirmen gerekir:
+> (volume boşken) kullanır. Volume zaten doluysa şifreyi veritabanının içinden
+> değiştirmen gerekir:
 > ```bash
 > docker compose exec postgres psql -U devuser -d personal_site -c "alter user devuser with password 'YENI_SIFRE';"
 > ```
-> Yeni sunucuda boş volume'le başlıyorsan (Bölüm 2.7'deki taşıma yolu) bu sorun çıkmaz.
+> Yeni sunucuda boş volume'le başladığın için bu sorun çıkmaz.
 
-### 0.3 Veritabanı ve pgAdmin portlarını dışarı açma
+### 0.3 ✅ Veritabanı ve pgAdmin portları dışarı kapalı
 
-Şu anki `docker-compose.yml` PostgreSQL'i `5433`, pgAdmin'i `5051` portundan
-**dışarıya** açıyor:
+PostgreSQL (`5433`), backend (`8091`) ve frontend (`8090`) portları `127.0.0.1:`
+önekiyle açılıyor, yani sadece makinenin kendisinden erişilir. Sunucuda internete
+bakan tek servis Caddy (80/443).
 
-```yaml
-ports:
-  - "5433:5432"     # ← internete açık, tehlikeli
-  - "5051:80"       # ← pgAdmin şifresi admin/admin, çok tehlikeli
-```
+pgAdmin sadece `dev` profilinde çalışır, sunucuda hiç açılmaz. Sunucudaki
+veritabanına bakman gerekirse SSH tüneli kullan (Bölüm 6.3).
 
-Sunucuda bunları ya tamamen kaldır, ya da sadece sunucunun kendisine aç:
+> ⚠️ Docker, ufw kurallarını atlayabilir (iptables'a doğrudan yazar). `127.0.0.1:`
+> öneki bu yüzden önemli; port eklerken onu silme.
 
-```yaml
-ports:
-  - "127.0.0.1:5433:5432"   # sadece sunucunun içinden erişilir
-```
+### 0.4 ✅ Gizli bilgiler .env'de
 
-`127.0.0.1:` öneki "bu portu sadece bu makineden görülebilir yap" demektir. Dışarıdan
-erişmen gerekirse SSH tüneli kullanırsın (Bölüm 6.3).
+Kök dizindeki `.env` `.gitignore`'da; şablonu `.env.example` git'te. Sunucuda
+`cp .env.example .env` ile başlayıp doldurursun (Bölüm 2.5).
 
-pgAdmin'i canlıda hiç çalıştırmamak en temizi. Gerekirse `admin@admin.com` / `admin`
-bilgilerini mutlaka değiştir.
-
-### 0.4 Mail şifresini .env'de tut
-
-Bu kısım hazır: kök dizindeki `.env` dosyası `.gitignore`'da, backend oradan okuyor.
-Sunucuda da aynı `.env` dosyasını oluşturman yeterli (Bölüm 2.5).
-
-> ⚠️ **`.env.example` şu an git'te değil.** Sunucuda `git clone` yaptığında gelmez ve
-> Bölüm 2.5'teki `cp .env.example .env` komutu hata verir. İçindeki değerler şablon
-> (gerçek şifre yok), commit'lemek güvenli:
-> ```bash
-> git add .env.example && git commit -m "chore: .env şablonunu ekle"
-> ```
-> Eski `backend/.env` dosyası silindi. İlk commit'le GitHub'a gitmişti; içindeki
+> Eski `backend/.env` dosyası ilk commit'le GitHub'a gitmişti; içindeki
 > veritabanı/pgAdmin şifrelerini başka bir yerde kullanıyorsan değiştir.
 
-### 0.5 Container'lar kendi kendine yeniden başlasın, loglar diski doldurmasın
+### 0.5 ✅ Otomatik yeniden başlama ve log sınırı
 
-Sunucu yeniden başladığında sitenin de otomatik kalkması ve Docker loglarının
-sınırsız büyümemesi için her servise ekle:
+Her serviste `restart: unless-stopped` ve log sınırı (10 MB × 3 dosya) var.
+Sunucu yeniden başlayınca site kendiliğinden kalkar.
 
-```yaml
-restart: unless-stopped
-logging:
-  options:
-    max-size: "10m"
-    max-file: "3"
-```
+> Lokalde de geçerli: Docker Desktop açılınca container'lar kendiliğinden başlar.
+> İstemiyorsan `docker compose stop` ile durdur; durdurulanlar bir daha kendiliğinden kalkmaz.
 
-### 0.6 Kayıt herkese açık: kapat ya da bilerek aç
+### 0.6 ✅ Kayıt varsayılan olarak kapalı
 
-Şu an siteye giren **herkes** hesap açıp yazı yayınlayabilir ve bu yazılar ana
-sayfadaki vitrine/kutulara düşer. İnternete açıldığı gün spam botları bunu bulur.
+`docker-compose.yml` backend'e `REGISTRATION_ENABLED=false` verir; kimse hesap açamaz
+ve sitede "Yazmaya başla" / "Kayıt ol" bağlantıları görünmez. Kendi hesabını açmak
+için `.env`'e geçici olarak `REGISTRATION_ENABLED=true` yaz,
+`docker compose up -d backend`, kayıt ol, sonra satırı silip komutu tekrarla
+(REHBER.md 8.1).
 
-Kişisel blog için önerim: kendi hesabını açtıktan sonra kaydı kapatmak. En basit yol,
-`SecurityConfig.java`'da `/api/auth/register`'ı `permitAll` listesinden çıkarıp
-`denyAll()` yapmak ve menüden "Yazmaya başla" bağlantılarını kaldırmak. Bu bir kod
-değişikliği; istersen yaparım.
+### 0.7 ✅ Canlı ortam ayarları
 
-### 0.7 Canlı ortam ayarları
-
-`docker-compose.yml`'de backend'e şunları da ver (Bölüm 2.6'daki örnekte var):
-
-| Ortam değişkeni | Neden |
-|---|---|
-| `SPRING_JPA_SHOW_SQL: "false"` | Her SQL sorgusu loga basılmasın |
-| `UPLOADS_DIR: /app/uploads` ve uploads volume'ü | Yüklenen kapak görselleri container yenilenince kaybolmasın |
-| `SERVER_SERVLET_SESSION_COOKIE_SECURE: "true"` | **HTTPS kurulduktan sonra** (Bölüm 5.4): oturum çerezi sadece şifreli bağlantıda gitsin |
+Uploads volume'ü (`UPLOADS_DIR`) compose'da. Oturum çerezinin `Secure` bayrağı
+`.env`'deki `COOKIE_SECURE=true` ile açılır (Bölüm 2.5).
 
 ---
 
@@ -147,7 +115,7 @@ değişikliği; istersen yaparım.
 | | **A) VPS kirala** | **B) Hazır platform** | **C) Karma** |
 |---|---|---|---|
 | Ne yaparsın | Bir Linux sunucu kiralar, şu an localde çalıştırdığın `docker compose up` komutunu orada çalıştırırsın | Railway/Render'a git reposunu bağlarsın, kendisi build eder | Frontend Vercel'de, backend+DB Railway'de |
-| Aylık maliyet | ~4-6 EUR (Hetzner CX22) | 5-20 USD (ücretsiz katman DB için yetersiz) | ~5-10 USD |
+| Aylık maliyet | ~4-6 EUR (Hetzner CX23) | 5-20 USD (ücretsiz katman DB için yetersiz) | ~5-10 USD |
 | Kurulum süresi | 1-2 saat | 30-60 dakika | 1-2 saat |
 | Kod değişikliği | **Yok** — mevcut yapı aynen çalışır | **Var** — nginx proxy yapısı bozulur, CORS ve API adresi ayarı gerekir | **Var** — B ile aynı |
 | Veritabanı kontrolü | Tamamen sende, volume'de | Platformun yönetilen DB'si | Platformun yönetilen DB'si |
@@ -158,7 +126,7 @@ değişikliği; istersen yaparım.
 ### Hangisi sana uygun?
 
 **Seçenek A (VPS) — çoğu durumda en mantıklısı.** Çünkü projen zaten tamamen
-Docker'lanmış ve `docker-compose.yml` dosyan 4 servisi birlikte ayağa kaldırıyor.
+Docker'lanmış ve `docker-compose.yml` dosyan tüm servisleri (HTTPS dahil) birlikte ayağa kaldırıyor.
 Sunucuda kelimenin tam anlamıyla **aynı komutu** çalıştırırsın. Frontend'in nginx'i
 `/api` isteklerini backend'e proxy'liyor, yani her şey tek adresten çalışıyor —
 CORS sorunu bile çıkmaz. Hiçbir kod değişikliği gerekmez.
@@ -185,7 +153,7 @@ Sağlayıcı seçenekleri:
 
 | Sağlayıcı | Ürün | Fiyat | Not |
 |---|---|---|---|
-| **Hetzner** | CX22 (2 vCPU, 4GB RAM) | ~4 EUR/ay | Fiyat/performans en iyisi, Almanya/Finlandiya |
+| **Hetzner** | CX23 (2 vCPU, 4GB RAM) | ~4-6 EUR/ay + KDV | Fiyat/performans en iyisi, Almanya/Finlandiya. 2026'da iki kez zam yaptı |
 | DigitalOcean | Basic Droplet (1GB) | 6 USD/ay | Dokümantasyonu çok iyi, yeni başlayan dostu |
 | Vultr | Regular (1GB) | 5-6 USD/ay | İstanbul lokasyonu var, Türkiye'den hızlı |
 | Contabo | VPS S | ~5 EUR/ay | Ucuz ama destek yavaş |
@@ -193,7 +161,7 @@ Sağlayıcı seçenekleri:
 > Fiyatlar ve ürün adları değişebiliyor; almadan önce sağlayıcının sitesinden güncelini kontrol et.
 
 Bu proje için **en az 2GB RAM** öneririm. Java (Spring Boot) + PostgreSQL + Nginx
-birlikte 1GB'a sığar ama build sırasında Maven zorlanır. Hetzner CX22 (4GB) rahat eder.
+birlikte 1GB'a sığar ama build sırasında Maven zorlanır. Hetzner CX23 (4GB) rahat eder.
 
 Kurarken:
 - İşletim sistemi: **Ubuntu 24.04 LTS**
@@ -274,6 +242,7 @@ Sunucuda, proje kökünde `.env` dosyasını oluştur:
 ```bash
 cd /root/mywebsite
 cp .env.example .env
+openssl rand -base64 24      # çıkan değeri kopyala, POSTGRES_PASSWORD'e yapıştıracaksın
 nano .env
 ```
 
@@ -283,78 +252,42 @@ nano .env
 MAIL_USERNAME=aliimranatabey@gmail.com
 MAIL_PASSWORD=16haneliuygulamasifresi
 CONTACT_RECIPIENT=aliimranatabey@gmail.com
-POSTGRES_PASSWORD=<openssl rand -base64 24 çıktısı>
+POSTGRES_PASSWORD=<openssl çıktısı>
+REGISTRATION_ENABLED=false
+
+COMPOSE_PROFILES=prod
+DOMAIN=aliimranatabey.com
+COOKIE_SECURE=true
 ```
 
-Kaydet: `Ctrl+O`, `Enter`, `Ctrl+X`.
+Kaydet: `Ctrl+O`, `Enter`, `Ctrl+X`. Sonra dosyayı sadece root okusun:
+`chmod 600 .env`
 
-### 2.6 Üretim ayarlarını uygula
+**Gmail uygulama şifresi** (`MAIL_PASSWORD`) normal Gmail şifren değildir:
+1. [myaccount.google.com](https://myaccount.google.com) → **Güvenlik** → **2 Adımlı
+   Doğrulama**'yı aç (kapalıysa uygulama şifresi seçeneği görünmez)
+2. Aynı sayfada arama kutusuna "Uygulama şifreleri" yaz → ad olarak `mywebsite` gir → **Oluştur**
+3. Çıkan 16 harfi boşluksuz `MAIL_PASSWORD=`'e yapıştır
 
-Bölüm 0'daki değişiklikleri `docker-compose.yml` üzerinde yap. Hedeflenen hali
-şuna benzemeli:
+Bu şifreyi lokalde de denemek istersen kendi Mac'indeki `.env`'e aynı iki satırı yaz
+ve `docker compose up -d backend` çalıştır. Lokal `.env`'e `POSTGRES_PASSWORD`,
+`COMPOSE_PROFILES`, `DOMAIN` yazma; lokal veritabanı `devpass` ile kurulu.
 
-```yaml
-services:
-  postgres:
-    image: postgres:16
-    container_name: personal_website_db
-    restart: unless-stopped
-    logging:
-      options: { max-size: "10m", max-file: "3" }
-    environment:
-      POSTGRES_DB: personal_site
-      POSTGRES_USER: devuser
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "127.0.0.1:5433:5432"      # sadece sunucu içinden
-    volumes:
-      - personal_website_data:/var/lib/postgresql/data
+### 2.6 Üretim ayarları
 
-  # pgadmin servisini canlıda yorum satırı yap veya sil
+Ayrıca bir şey yapman gerekmiyor. `docker-compose.yml` aynı dosyayla hem lokalde hem
+sunucuda çalışır; farkı `.env` belirler:
 
-  backend:
-    build: ./backend
-    container_name: personal_website_backend
-    restart: unless-stopped
-    logging:
-      options: { max-size: "10m", max-file: "3" }
-    depends_on:
-      - postgres
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/personal_site
-      SPRING_DATASOURCE_USERNAME: devuser
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      SPRING_JPA_HIBERNATE_DDL_AUTO: validate
-      SPRING_JPA_SHOW_SQL: "false"
-      SPRING_FLYWAY_ENABLED: "true"
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-aliimranatabey@gmail.com}
-      UPLOADS_DIR: /app/uploads
-      # HTTPS kurulduktan sonra (Bölüm 5.4) aç:
-      # SERVER_SERVLET_SESSION_COOKIE_SECURE: "true"
-    volumes:
-      - personal_website_uploads:/app/uploads   # kapak görselleri; silinirse görseller gider
-    # ports satırını sil — backend'e sadece frontend'in nginx'i erişecek
+| | Lokal | Sunucu |
+|---|---|---|
+| `COMPOSE_PROFILES` | boş | `prod` → Caddy (HTTPS) açılır |
+| Siteye giriş | `http://localhost:8090` | `https://DOMAIN` |
+| pgAdmin | `COMPOSE_PROFILES=dev docker compose up -d` ile | çalışmaz |
+| Veritabanı şifresi | `devpass` | `.env`'deki `POSTGRES_PASSWORD` |
 
-  frontend:
-    build: ./frontend
-    container_name: personal_website_frontend
-    restart: unless-stopped
-    logging:
-      options: { max-size: "10m", max-file: "3" }
-    depends_on:
-      - backend
-    ports:
-      - "80:80"                     # 8090 değil, artık gerçek web portu
-
-volumes:
-  personal_website_data:
-  personal_website_uploads:
-```
-
-> Eski rehberdeki örnekte uploads volume'ü ve `UPLOADS_DIR` yoktu. O haliyle
-> yüklediğin kapak görselleri container her yenilendiğinde silinirdi.
+Hazır olanlar: `restart: unless-stopped`, log sınırı (10 MB × 3), postgres/backend/
+frontend portları sadece `127.0.0.1`'de, kapak görselleri için uploads volume'ü,
+backend'in veritabanı hazır olmadan açılmaması (healthcheck).
 
 ### 2.7 Mevcut yazılarını sunucuya taşı
 
@@ -401,6 +334,10 @@ tekrar çalıştırmaz, şemayı olduğu gibi kabul eder.
 
 ### 2.8 Ayağa kaldır
 
+Önce alan adının DNS kayıtlarını sunucuya yönlendir (Bölüm 5.2) ve `dig +short
+alanadin.com` sunucunun IP'sini verene kadar bekle. Caddy sertifikayı alabilmek için
+buna ihtiyaç duyar. Sonra:
+
 ```bash
 docker compose up -d --build
 ```
@@ -410,18 +347,21 @@ docker compose up -d --build
 Kontrol et:
 
 ```bash
-docker compose ps          # hepsi "Up" olmalı
+docker compose ps          # postgres, backend, frontend, caddy "Up" olmalı
 docker compose logs -f     # hata var mı bak, çıkmak için Ctrl+C
 ```
 
-Tarayıcıdan `http://91.99.12.34` adresini aç. Siten yayında.
+Tarayıcıdan `https://alanadin.com` adresini aç. Siten yayında.
+
+> IP adresiyle (`http://91.99.12.34`) açılmaz; bu bilerek böyle. Caddy sadece alan
+> adına gelen istekleri karşılar, frontend'in portu da sadece sunucunun içine açık.
 
 ### 2.9 Sonrası
 
-Bu noktada site çalışıyor ama:
-- Adres çirkin bir IP → **Bölüm 5**'e geç, alan adı al
-- Bağlantı `http://`, şifreli değil → **Bölüm 5.4**'te HTTPS kuracaksın
+- İletişim formundan kendine bir mesaj gönder, mail geliyor mu bak
 - Yedek yok → **Bölüm 6** şart
+- Google'a tanıt: [Search Console](https://search.google.com/search-console)'a
+  alan adını ekle, site haritası olarak `https://alanadin.com/sitemap.xml` ver
 
 ---
 
@@ -472,9 +412,6 @@ gerekmez. Backend servisine şu değişkeni ver (virgülle birden fazla adres ya
 ```
 APP_CORS_ALLOWED_ORIGINS=https://senin-frontend-adresin.up.railway.app
 ```
-
-Ayrıca `config/WebConfig.java`'daki sabit `localhost:5173` CORS tanımını sil; ikinci
-bir CORS kaynağı olarak kafa karıştırıyor.
 
 **3. Çerezler ve CSRF** (yukarıdaki uyarı): oturum çerezini
 `SERVER_SERVLET_SESSION_COOKIE_SAME_SITE=none` ve
@@ -580,75 +517,39 @@ Sunucunun IP'sini yazdırıyorsa hazır.
 
 Her ikisi de HTTPS sertifikasını **otomatik** kurar, Bölüm 5.4'ü atlayabilirsin.
 
-### 5.4 HTTPS kur (Seçenek A için)
+### 5.4 HTTPS (Seçenek A için)
 
-Alan adın çalışınca sitenin `https://` olması gerekir. Tarayıcılar `http://`
-sitelerde "Güvenli değil" uyarısı gösterir, üstelik iletişim formundan gelen
-mesajlar şifresiz gider.
+Ayrıca nginx ya da sertifika kurmana gerek yok. `docker-compose.yml`'de **Caddy**
+servisi hazır duruyor. Caddy sertifikayı Let's Encrypt'ten ücretsiz alır, süresi
+dolmadan kendisi yeniler, `http://` isteklerini `https://`'e, `www.` ile gelenleri de
+çıplak alan adına yönlendirir. Ayarları kökteki `Caddyfile`'da.
 
-En kolay yol **Caddy** — sertifikayı Let's Encrypt'ten kendisi alır, süresi dolunca
-kendisi yeniler, hiç uğraştırmaz.
-
-Sunucuda `Caddyfile` adında bir dosya oluştur:
+Açmak için sunucudaki `.env`'de şu üç satır yeterli (Bölüm 2.5):
 
 ```
-aliimranatabey.com, www.aliimranatabey.com {
-    reverse_proxy frontend:80
-}
+COMPOSE_PROFILES=prod
+DOMAIN=aliimranatabey.com
+COOKIE_SECURE=true
 ```
 
-`docker-compose.yml` dosyasına Caddy servisini ekle:
+İstek sırası: ziyaretçi → **Caddy** (443, HTTPS) → frontend'in **nginx**'i (sayfalar,
+`/api`'yi iletir) → **backend**. Caddy dışında hiçbir servis internete açık değil.
 
-```yaml
-  caddy:
-    image: caddy:2
-    container_name: personal_website_caddy
-    restart: unless-stopped
-    depends_on:
-      - frontend
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-```
-
-Ve `frontend` servisinden `ports` satırlarını **kaldır** (artık dışarıya Caddy
-bakıyor, frontend'e sadece Caddy erişecek). `volumes:` bölümünün altına da ekle:
-
-```yaml
-volumes:
-  personal_website_data:
-  caddy_data:
-  caddy_config:
-```
-
-Sonra:
+Kontrol:
 
 ```bash
-docker compose up -d
-docker compose logs -f caddy
+docker compose logs -f caddy     # "certificate obtained successfully" satırını görürsün
 ```
 
-Loglarda sertifika alındığını görürsün. `https://aliimranatabey.com` artık yeşil
-kilitle açılır. `http://` adresini de otomatik `https://`'e yönlendirir.
+> ⚠️ Caddy'yi açmadan **önce** DNS kayıtları sunucunu göstermeli (Bölüm 5.2).
+> Göstermiyorsa Let's Encrypt doğrulayamaz; Caddy bir süre sonra tekrar dener ama
+> çok sık başarısız denemede haftalık limite takılabilirsin.
 
-> `caddy_data` volume'ünü silme — sertifikaların orada durur. Silersen Let's Encrypt'in
-> haftalık limitine takılabilirsin.
+> `caddy_data` volume'ünü silme: sertifikalar orada durur.
 
-HTTPS çalıştıktan sonra iki son ayar:
-
-1. `docker-compose.yml`'de backend'in altındaki
-   `SERVER_SERVLET_SESSION_COOKIE_SECURE: "true"` satırının yorumunu kaldır ve
-   `docker compose up -d backend` çalıştır. Oturum çerezi artık sadece şifreli
-   bağlantıda gider.
-2. Hız sınırı (`RateLimitFilter`) ziyaretçinin IP'sini `X-Forwarded-For` header'ından
-   okuyor. Caddy bu header'ı ziyaretçinin gerçek IP'siyle yazar, yani Caddy önündeyken
-   doğru çalışır. Caddy'siz, sadece nginx ile `http://` yayında kalırsan ziyaretçi bu
-   header'ı kendisi gönderip sınırı atlatabilir. Bu da HTTPS'i ertelememek için bir
-   sebep daha.
+Hız sınırı (`RateLimitFilter`) ziyaretçinin gerçek IP'sini `X-Forwarded-For`
+zincirinden alır; Caddy sahte header'ı atıp gerçek IP'yi yazar. Caddy'de
+`trusted_proxies` ayarlama, varsayılanı doğru olanıdır.
 
 ---
 
@@ -778,21 +679,22 @@ docker compose logs --tail 50 frontend
 
 ## Özet Kontrol Listesi
 
-Yayına çıkmadan önce:
+Kodda hazır olanlar (Kasım 2026):
 
-- [x] Blog yazma uçları korumalı (Bölüm 0.1) — üyelik sistemi eklendi
-- [ ] Kayıt olup eski yazıları sahiplendim (Bölüm 0.1)
-- [ ] Kaydı kapattım ya da açık bırakmaya bilerek karar verdim (Bölüm 0.6)
-- [ ] Veritabanı şifresini değiştirdim (Bölüm 0.2)
-- [ ] postgres/pgadmin portlarını dışarı kapattım (Bölüm 0.3)
-- [ ] `.env.example`'ı commit'leyip push'ladım (Bölüm 0.4)
-- [ ] Sunucuda `.env` dosyasını oluşturdum, Gmail uygulama şifresini girdim (Bölüm 0.4)
-- [ ] `restart` ve log sınırı ekledim (Bölüm 0.5)
-- [ ] Uploads volume'ü ve `SPRING_JPA_SHOW_SQL=false` compose'da (Bölüm 0.7 / 2.6)
-- [ ] Güvenlik duvarını kurdum, SSH şifre girişini kapattım (Bölüm 2.2–2.3)
+- [x] Blog yazma uçları korumalı, kayıt varsayılan kapalı (Bölüm 0.1, 0.6)
+- [x] Veritabanı/pgAdmin portları dışarı kapalı, pgAdmin sadece `dev` profilinde (Bölüm 0.3)
+- [x] `restart`, log sınırı, uploads volume'ü, Caddy (HTTPS) compose'da (Bölüm 0.5, 5.4)
+- [x] `.env.example` git'te (Bölüm 0.4)
+
+Senin yapacakların:
+
+- [ ] Kodu commit'leyip GitHub'a push'ladım (sunucu oradan çeker)
+- [ ] Yazıları sahiplendim ya da sildim (Bölüm 0.1)
+- [ ] Sunucuyu kiraladım, güvenlik duvarını kurdum, SSH şifre girişini kapattım (Bölüm 2.1–2.3)
+- [ ] Alan adını aldım, DNS kayıtlarını sunucuya yönlendirdim (Bölüm 5.1–5.2)
+- [ ] Sunucuda `.env`'i doldurdum: DB şifresi, Gmail uygulama şifresi, `DOMAIN`, `COMPOSE_PROFILES=prod`, `COOKIE_SECURE=true` (Bölüm 2.5)
 - [ ] Yazılarımı sunucuya taşıdım ve sitede gördüm (Bölüm 2.7)
-- [ ] Alan adını bağladım (Bölüm 5.2)
-- [ ] HTTPS çalışıyor, oturum çerezi `Secure` (Bölüm 5.4)
+- [ ] `https://` adresim açılıyor, iletişim formundan kendime mesaj attım ve geldi
 - [ ] Veritabanı **ve** görseller için otomatik yedek kurdum, bir kere geri yüklemeyi denedim (Bölüm 6)
 
 Son madde önemli: yedeğin geri yüklenebildiğini **denemeden** yedeğin var sayılmaz.

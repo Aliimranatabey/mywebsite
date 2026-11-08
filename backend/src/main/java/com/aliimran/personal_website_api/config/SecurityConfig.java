@@ -65,12 +65,12 @@ public class SecurityConfig {
         .authorizeHttpRequests(auth -> auth
             // Okuma herkese açık
             .requestMatchers(HttpMethod.GET, "/api/blogs", "/api/blogs/**").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/health").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/health", "/api/sitemap.xml").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/uploads/**").permitAll()
             .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
             // Kayıt ve giriş
             .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
-            .requestMatchers(HttpMethod.GET, "/api/auth/csrf").permitAll()
+            .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/auth/registration").permitAll()
             // Yazma işlemleri giriş ister (sahiplik kontrolü servis katmanında)
             .requestMatchers(HttpMethod.POST, "/api/blogs").authenticated()
             .requestMatchers(HttpMethod.PUT, "/api/blogs/**").authenticated()

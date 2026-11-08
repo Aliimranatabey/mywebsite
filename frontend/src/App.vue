@@ -19,7 +19,7 @@
             <router-link to="/blog">Yazılar</router-link>
             <router-link to="/resume">Hakkımda</router-link>
             <router-link to="/contact">İletişim</router-link>
-            <router-link to="/register">Yazmaya başla</router-link>
+            <router-link v-if="auth.registrationOpen" to="/register">Yazmaya başla</router-link>
           </nav>
         </div>
 
@@ -31,6 +31,9 @@
 
 <script setup>
 import NavBar from '@/components/NavBar.vue'
+import { useAuthStore } from '@/stores/auth'
+
+const auth = useAuthStore()
 
 const year = new Date().getFullYear()
 </script>

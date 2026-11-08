@@ -7,7 +7,7 @@
       </div>
 
       <router-link v-if="auth.isLoggedIn" to="/blog/new" class="btn btn-primary">
-        <span class="mdi mdi-pencil-outline" aria-hidden="true"></span>
+        <AppIcon name="pencil-outline" />
         Yeni yazı
       </router-link>
       <router-link v-else to="/login" class="btn btn-secondary">
@@ -32,17 +32,18 @@
 
     <nav v-if="totalPages > 1" class="pager">
       <button class="btn btn-secondary btn-sm" :disabled="currentPage === 1" @click="goTo(currentPage - 1)">
-        <span class="mdi mdi-arrow-left" aria-hidden="true"></span> Önceki
+        <AppIcon name="arrow-left" /> Önceki
       </button>
       <span class="muted">{{ currentPage }} / {{ totalPages }}</span>
       <button class="btn btn-secondary btn-sm" :disabled="currentPage === totalPages" @click="goTo(currentPage + 1)">
-        Sonraki <span class="mdi mdi-arrow-right" aria-hidden="true"></span>
+        Sonraki <AppIcon name="arrow-right" />
       </button>
     </nav>
   </div>
 </template>
 
 <script setup>
+import AppIcon from '@/components/AppIcon.vue'
 import { ref, onMounted } from 'vue'
 import api from '@/services/api'
 import { useAuthStore } from '@/stores/auth'

@@ -58,6 +58,10 @@ export default {
   me() {
     return api.get('/auth/me');
   },
+  // Yeni üye kaydı açık mı ({ enabled })
+  registrationStatus() {
+    return api.get('/auth/registration');
+  },
   // CSRF çerezini almak için; giriş/kayıt öncesi çağrılır
   primeCsrf() {
     return api.get('/auth/csrf');

@@ -8,7 +8,7 @@
     <article v-else-if="blog && !editMode">
       <header class="container narrow head">
         <router-link to="/blog" class="back">
-          <span class="mdi mdi-arrow-left" aria-hidden="true"></span> Yazılar
+          <AppIcon name="arrow-left" /> Yazılar
         </router-link>
 
         <v-alert v-if="error" type="error" class="mb-6">{{ error }}</v-alert>
@@ -33,10 +33,10 @@
           <!-- Yalnızca yazının sahibine görünür -->
           <div v-if="blog.canEdit" class="owner-tools">
             <button class="btn btn-secondary btn-sm" @click="enableEditMode">
-              <span class="mdi mdi-pencil-outline" aria-hidden="true"></span> Düzenle
+              <AppIcon name="pencil-outline" /> Düzenle
             </button>
             <button class="btn btn-ghost btn-sm danger" @click="confirmDelete = true">
-              <span class="mdi mdi-trash-can-outline" aria-hidden="true"></span> Sil
+              <AppIcon name="trash-can-outline" /> Sil
             </button>
           </div>
         </div>
@@ -117,6 +117,8 @@
 </template>
 
 <script setup>
+import QuillEditor from '@/components/QuillEditorLazy'
+import AppIcon from '@/components/AppIcon.vue'
 import { ref, onMounted, reactive, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import api from '@/services/api'

@@ -1,60 +1,123 @@
+# Aynı dosya hem lokalde hem sunucuda çalışır. Farkı .env belirler:
+#   Lokal:  .env'de COMPOSE_PROFILES yok (ya da "dev")  → site http://localhost:8090
+#   Sunucu: .env'de COMPOSE_PROFILES=prod ve DOMAIN=...  → Caddy açılır, site https://DOMAIN
+# pgAdmin sadece "dev" profilinde açılır: COMPOSE_PROFILES=dev docker compose up -d
+
+# Her serviste ortak: sunucu yeniden başlayınca kendi kalksın, loglar diski doldurmasın
+x-common: &common
+  restart: unless-stopped
+  logging:
+    driver: json-file
+    options:
+      max-size: "10m"
+      max-file: "3"
+
 services:
   postgres:
+    <<: *common
     image: postgres:16
     container_name: personal_website_db
     environment:
       POSTGRES_DB: personal_site
       POSTGRES_USER: devuser
-      POSTGRES_PASSWORD: devpass
+      # Canlıda .env'e uzun rastgele bir şifre yaz (openssl rand -base64 24)
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
     ports:
-      - "5433:5432"
+      # 127.0.0.1: sadece bu makineden erişilir, internete açılmaz
+      - "127.0.0.1:5433:5432"
     volumes:
       - personal_website_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U devuser -d personal_site"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
 
   pgadmin:
+    <<: *common
+    profiles: ["dev"]
     image: dpage/pgadmin4:8
     container_name: personal_website_pgadmin
     depends_on:
       - postgres
     ports:
-      - "5051:80"
+      - "127.0.0.1:5051:80"
     environment:
-      PGADMIN_DEFAULT_EMAIL: admin@admin.com
-      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@admin.com}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
     volumes:
       - personal_website_pgadmin_data:/var/lib/pgadmin
 
   backend:
+    <<: *common
     build: ./backend
     container_name: personal_website_backend
+    # Java önüne gelen belleği kapar; sınır koyunca 2 GB'lık en ucuz sunucuya da sığar
+    mem_limit: 768m
     depends_on:
-      - postgres
+      postgres:
+        # Veritabanı bağlantı kabul etmeden backend açılıp hata vermesin
+        condition: service_healthy
     environment:
+      # Heap = sınırın %65'i (~500 MB); SerialGC tek çekirdekli küçük sunucuda en az bellek yiyen
+      JAVA_TOOL_OPTIONS: "-XX:MaxRAMPercentage=65 -XX:+UseSerialGC"
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/personal_site
       SPRING_DATASOURCE_USERNAME: devuser
-      SPRING_DATASOURCE_PASSWORD: devpass
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_FLYWAY_ENABLED: "true"
-      # Kok dizindeki .env dosyasindan okunur (git'e girmez)
+      # Kök dizindeki .env dosyasından okunur (git'e girmez)
       MAIL_USERNAME: ${MAIL_USERNAME:-}
       MAIL_PASSWORD: ${MAIL_PASSWORD:-}
       CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-aliimranatabey@gmail.com}
       UPLOADS_DIR: /app/uploads
+      # Kapalıyken kimse hesap açamaz. Kendi hesabını açacağın zaman .env'e
+      # REGISTRATION_ENABLED=true yaz, kayıt ol, sonra satırı sil.
+      REGISTRATION_ENABLED: ${REGISTRATION_ENABLED:-false}
+      # HTTPS'te true: oturum çerezi sadece şifreli bağlantıda gider
+      SERVER_SERVLET_SESSION_COOKIE_SECURE: ${COOKIE_SECURE:-false}
     volumes:
-      # Kapak gorselleri: container silinse de kalir
+      # Kapak görselleri: container silinse de kalır
       - personal_website_uploads:/app/uploads
     ports:
-      - "8091:8080"
+      # Backend'e normalde nginx üzerinden gidilir; bu port sadece lokal deneme için
+      - "127.0.0.1:8091:8080"
 
   frontend:
+    <<: *common
     build: ./frontend
     container_name: personal_website_frontend
     depends_on:
       - backend
     ports:
-      - "8090:80"
+      # Lokalde siteye buradan girersin. Sunucuda dışarıya Caddy bakar,
+      # bu port 127.0.0.1'e bağlı olduğu için internetten görünmez.
+      - "127.0.0.1:8090:80"
+
+  # HTTPS: Let's Encrypt sertifikasını kendisi alır ve yeniler. Sadece sunucuda (prod).
+  caddy:
+    <<: *common
+    profiles: ["prod"]
+    image: caddy:2
+    container_name: personal_website_caddy
+    depends_on:
+      - frontend
+    environment:
+      # .env'deki DOMAIN (örn. aliimranatabey.com); boşsa Caddy açılmaz, loglarda hata verir
+      DOMAIN: ${DOMAIN:-}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"   # HTTP/3
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # Sertifikalar burada durur; silme (Let's Encrypt'in haftalık limitine takılırsın)
+      - caddy_data:/data
+      - caddy_config:/config
 
 volumes:
   personal_website_data:
   personal_website_pgadmin_data:
   personal_website_uploads:
+  caddy_data:
+  caddy_config:

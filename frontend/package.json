@@ -14,8 +14,9 @@
     "format": "prettier --write src/"
   },
   "dependencies": {
-    "@mdi/font": "^7.4.47",
-    "@vueup/vue-quill": "^1.0.0-beta.11",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@mdi/js": "^7.4.47",
+    "@vueup/vue-quill": "1.0.0-beta.11",
     "axios": "^1.12.2",
     "pinia": "^3.0.3",
     "vue": "^3.5.18",
@@ -34,6 +35,7 @@
     "prettier": "3.6.2",
     "tailwindcss": "^4.1.15",
     "vite": "^7.0.6",
-    "vite-plugin-vue-devtools": "^8.2.1"
+    "vite-plugin-vue-devtools": "^8.2.1",
+    "vite-plugin-vuetify": "^2.1.3"
   }
 }
