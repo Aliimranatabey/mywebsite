@@ -15,6 +15,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
+import org.springframework.security.web.savedrequest.NullRequestCache;
 import org.springframework.security.web.csrf.CsrfTokenRequestAttributeHandler;
 import com.aliimran.personal_website_api.security.AppUserDetailsService;
 import org.springframework.web.cors.CorsConfigurationSource;
@@ -67,7 +68,6 @@ public class SecurityConfig {
             .requestMatchers(HttpMethod.GET, "/api/blogs", "/api/blogs/**").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/health", "/api/sitemap.xml").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/uploads/**").permitAll()
-            .requestMatchers(HttpMethod.POST, "/api/contact").permitAll()
             // Kayıt ve giriş
             .requestMatchers(HttpMethod.POST, "/api/auth/register", "/api/auth/login").permitAll()
             .requestMatchers(HttpMethod.GET, "/api/auth/csrf", "/api/auth/registration").permitAll()
@@ -94,6 +94,9 @@ public class SecurityConfig {
             }))
         .addFilterBefore(rateLimitFilter,
             org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter.class)
+        // 401'de isteği "girişten sonra dönülecek yer" diye oturuma kaydetme: SPA'da gereksiz
+        // ve giriş yapmamış ziyaretçiye JSESSIONID çerezi yazıyordu (ziyaretçiye çerez yok)
+        .requestCache(cache -> cache.requestCache(new NullRequestCache()))
         // Varsayılan form login / basic auth kapalı, kendi uçlarımızı kullanıyoruz
         .formLogin(form -> form.disable())
         .httpBasic(basic -> basic.disable())

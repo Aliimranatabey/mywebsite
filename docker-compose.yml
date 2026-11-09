@@ -66,10 +66,6 @@ services:
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-devpass}
       SPRING_JPA_HIBERNATE_DDL_AUTO: validate
       SPRING_FLYWAY_ENABLED: "true"
-      # Kök dizindeki .env dosyasından okunur (git'e girmez)
-      MAIL_USERNAME: ${MAIL_USERNAME:-}
-      MAIL_PASSWORD: ${MAIL_PASSWORD:-}
-      CONTACT_RECIPIENT: ${CONTACT_RECIPIENT:-aliimranatabey@gmail.com}
       UPLOADS_DIR: /app/uploads
       # Kapalıyken kimse hesap açamaz. Kendi hesabını açacağın zaman .env'e
       # REGISTRATION_ENABLED=true yaz, kayıt ol, sonra satırı sil.

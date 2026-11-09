@@ -75,9 +75,4 @@ export default {
     // Content-Type'ı tarayıcı boundary ile birlikte kendisi koysun
     return api.post('/uploads', form, { headers: { 'Content-Type': undefined } });
   },
-
-  // ---- İletişim ----
-  sendMessage(message) {
-    return api.post('/contact', message);
-  },
 };

@@ -12,3 +12,5 @@ frontend/node_modules/
 
 # Sunucuya taşıma dökümü (içinde veritabanı var)
 tasima.sql
+yedek-*.sql
+tasima-gorseller.tgz

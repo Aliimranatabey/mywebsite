@@ -30,7 +30,6 @@ public class RateLimitFilter extends OncePerRequestFilter {
   private static final Map<String, Integer> LIMITS = Map.of(
       "POST /api/auth/register", 5,
       "POST /api/auth/login", 10,
-      "POST /api/contact", 5,
       "POST /api/uploads", 30);
 
   private final Map<String, Counter> counters = new ConcurrentHashMap<>();

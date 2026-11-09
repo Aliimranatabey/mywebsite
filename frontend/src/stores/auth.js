@@ -34,10 +34,11 @@ export const useAuthStore = defineStore('auth', () => {
       .then(({ data }) => (registrationOpen.value = data?.enabled === true))
       .catch(() => {})
     try {
-      // CSRF çerezini baştan al: yazma işlemleri bu token olmadan 403 alır
-      await api.primeCsrf().catch(() => {})
       const { data } = await api.me()
       user.value = data
+      // CSRF çerezi sadece giriş yapmış kişiye (sana) yazılır: yazma işlemleri
+      // bu token olmadan 403 alır. Ziyaretçinin tarayıcısına hiç çerez yazılmaz.
+      await api.primeCsrf().catch(() => {})
     } catch {
       // 401 bekleniyor: giriş yapılmamış demektir
       user.value = null

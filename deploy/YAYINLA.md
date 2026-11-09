@@ -1,132 +1,108 @@
 # Siteyi Yayınla — Adım Adım
 
-Toplam süre ~1 saat. Maliyet: sunucu ~4-6 €/ay + alan adı ~10 $/yıl.
-Her adımda: **Ne** yapıyoruz · **Neden** · **Sektörde** kim kullanıyor.
+Site ziyaretçiden kişisel veri toplamaz: form, çerez, analitik, dış font ya da dış görsel yok.
+Bu yüzden KVKK yükümlülüğü (aydınlatma, yurt dışı aktarım, VERBİS) doğmaz.
+Sana kalan iş: **sunucu kiralamak + alan adı almak**. Gerisini scriptler yapar.
+
+## Maliyet (Kasım 2026)
+| Kalem | Fiyat | TL (1 € ≈ 55,5 TL) |
+|---|---|---|
+| Hetzner CX23 sunucu (2 çekirdek, 4 GB, IPv4 dahil) | 5,99 €/ay | ~330 TL/ay |
+| Cloudflare `.com` alan adı | ~10,5 $/yıl | ~500 TL/yıl |
+| **İlk ay toplam** | | **~830 TL** |
+| **Yıllık toplam** | | **~4.500 TL** (ayda ortalama ~375 TL) |
+
+- Türkiye'den bireysel müşteriye Hetzner KDV eklemiyor; bankan yurt dışı işlem ücreti alabilir.
+- Hetzner saatlik faturalar: sunucuyu silersen o andan sonrası için ödeme yapmazsın.
 
 ---
 
-## 1. Kodu GitHub'a gönder · Mac · 2 dk
-```bash
-cd ~/vscode-workspace/mywebsite
-git add -A && git commit -m "feat: canlıya çıkış hazırlığı" && git push
-```
-- **Neden:** Sunucu kodu GitHub'dan çeker. Push edilmeyen değişiklik sunucuya gitmez.
-- **Sektörde:** Her yazılım şirketi. Canlıdaki kodun tek kaynağı git'tir.
-
-## 2. SSH anahtarı oluştur · Mac · 1 dk
-```bash
-ssh-keygen -t ed25519          # Enter, Enter, Enter
-cat ~/.ssh/id_ed25519.pub      # çıkan satırı kopyala
-```
-- **Neden:** Sunucuya şifre yerine anahtarla gireceksin. Botlar şifreyi deneyerek kırabilir, anahtarı kıramaz.
-- **Sektörde:** Standart. Şirketlerde sunucuya şifreyle giriş yasaktır.
+## ✅ 1. Kod GitHub'da
+## ✅ 2. SSH anahtarı hazır (`~/.ssh/id_ed25519.pub`)
 
 ## 3. Sunucu kirala · hetzner.com · 10 dk
-1. Hesap aç (kimlik doğrulaması isteyebilir).
+1. Hesap aç (kimlik doğrulaması isteyebilir), kartını ekle.
 2. **Cloud → New Server** ekranında:
-   - Location: **Nuremberg** ya da **Helsinki**
+   - Location: **Nuremberg** / **Falkenstein** / **Helsinki** (hangisinde stok varsa)
    - Image: **Ubuntu 24.04**
-   - Type: **Shared vCPU → en ucuz x86 paket** (CX23). Site ~250 MB RAM kullanıyor, en küçüğü yeter.
-   - Networking: **IPv4 açık** kalsın (+0,50 €). Türkiye'de birçok internet IPv6'yı düzgün desteklemiyor.
-   - SSH Keys: 2. adımda kopyaladığın satırı yapıştır.
-3. **Create**, sonra çıkan **IP adresini** not et.
-- **Neden:** Siten 7/24 açık duracak bir bilgisayara ihtiyaç duyuyor.
-- **Sektörde:** Buna VPS denir. Girişimler ve bağımsız geliştiriciler Hetzner'i ve DigitalOcean'ı, büyük şirketler AWS ve Azure'u kullanır.
-- Panelde fiyat 6 €'nun üstündeyse alternatif: **netcup.com → VPS 500**.
+   - Type: **Shared vCPU → x86 → CX23**
+     - Stok yoksa **Arm64 → CAX11**; site ARM'de de çalışır.
+   - Networking: **IPv4 açık** kalsın
+   - SSH Keys: aşağıdaki satırı yapıştır
+     ```
+     ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIB5H8Btrj4GTrOpQnCofk7eK/vvVNzWhhf+GIr5Ih1rv ali-mac
+     ```
+3. **Create** → **IP adresini** not et.
+- **Neden Hetzner:** Avrupa'da fiyat/performans lideri. Girişimler ve bağımsız geliştiriciler yaygın kullanır.
 
-## 4. Alan adı al ve sunucuya yönlendir · cloudflare.com · 10 dk
-1. Hesap aç, **Domain Registration → Register** ile alan adını al (örn. `aliimranatabey.com`).
+## 4. Alan adı al · cloudflare.com · 10 dk
+1. Hesap aç → **Domain Registration → Register Domains** → alan adını al.
 2. **DNS → Records** altına iki kayıt ekle:
 
-| Type | Name | Content | Proxy |
+| Type | Name | Content | Proxy status |
 |---|---|---|---|
 | A | `@` | sunucu IP'si | **DNS only** (gri bulut) |
 | A | `www` | sunucu IP'si | **DNS only** (gri bulut) |
 
-- **Neden:** İnsanlar IP adresi değil isim yazar. DNS, ismi IP'ye çevirir.
-- **Neden gri bulut:** HTTPS sertifikasını sunucudaki Caddy alacak. Turuncu bulut buna engel olur.
-- **Sektörde:** Cloudflare, internetteki sitelerin yaklaşık %20'sinin DNS'ini yönetir. Alan adını maliyetine satar, yenilemede zam yapmaz.
+- **Neden Cloudflare:** Maliyetine satar, yenilemede zam yapmaz, DNS ve WHOIS gizliliği ücretsiz.
+- **Neden gri bulut:** Ziyaretçi trafiği Cloudflare'den geçmez. HTTPS sertifikasını sunucudaki Caddy alır.
 
-## 5. Sunucuyu kur · Sunucu · 10 dk
-```bash
-ssh root@SUNUCU_IP
-git clone https://github.com/Aliimranatabey/mywebsite.git
-cd mywebsite
-bash deploy/kurulum.sh
-```
-Script senden alan adını, Gmail adresini ve Gmail uygulama şifresini ister.
-Uygulama şifresi şöyle alınır: myaccount.google.com → Güvenlik → 2 Adımlı Doğrulama'yı aç → aramaya "Uygulama şifreleri" yaz → oluştur.
-
-Script ne yapıyor:
-- Sistemi günceller, Docker'ı kurar
-- 2 GB swap açar: derleme sırasında bellek yetmezse diye
-- Güvenlik duvarı kurar: sadece 22, 80 ve 443 portları açık kalır
-- Güvenlik güncellemelerini otomatik yapar
-- SSH'ta şifreli girişi kapatır
-- `.env` dosyasını oluşturur; veritabanı şifresi rastgele üretilir
-- Her gece 03:00'te yedek alacak şekilde ayarlar
-
-- **Sektörde:** Buna "provisioning" denir. Şirketler Ansible, Terraform ya da cloud-init kullanır; bu script onların mini hali.
-
-## 6. Yazılarını taşı · Mac, sonra Sunucu · 5 dk
-**Mac'te** (yeni bir terminal sekmesinde):
-```bash
-cd ~/vscode-workspace/mywebsite
-docker compose up -d postgres
-docker compose exec -T postgres pg_dump -U devuser personal_site > tasima.sql
-scp tasima.sql root@SUNUCU_IP:/root/mywebsite/
-```
-**Sunucuda:**
-```bash
-bash deploy/yazilari-yukle.sh tasima.sql     # "Yazı sayısı: 9" demeli
-```
-- **Neden:** 9 yazın sadece Mac'indeki veritabanında duruyor. Script ayrıca seed'den gelen 2 deneme yazısını siler.
-- **Sektörde:** `pg_dump` PostgreSQL'in standart taşıma ve yedek aracıdır.
-
-## 7. Siteyi aç · Sunucu · 10 dk
-```bash
-dig +short ALANADIN.com        # sunucu IP'sini yazmalı; yazmıyorsa birkaç dakika bekle
-docker compose up -d --build   # ilk derleme 5-10 dk sürer
-docker compose logs -f caddy   # "certificate obtained" görünce Ctrl+C
-```
-Tarayıcıda `https://ALANADIN.com` adresini aç. 🎉
-- **Neden:** Docker; veritabanını, backend'i, frontend'i ve Caddy'yi tek komutla, Mac'te denediğin halleriyle ayağa kaldırır.
-- **HTTPS:** Caddy, Let's Encrypt'ten ücretsiz sertifika alır ve kendisi yeniler.
-- **Sektörde:** Docker hemen her şirkette var; büyükler üstüne Kubernetes kurar. İnternetteki sitelerin yarısından fazlası Let's Encrypt sertifikası kullanır.
-
-## 8. Hesabını aç, yazıları sahiplen · Sunucu + tarayıcı · 3 dk
-```bash
-bash deploy/kayit.sh ac
-```
-Sitede **/register** sayfasına git ve kayıt ol. Sonra:
-```bash
-bash deploy/sahiplen.sh senin@epostan.com    # "9 yazı sana bağlandı"
-bash deploy/kayit.sh kapat
-```
-- **Neden:** Yazıları düzenleyebilmek için senin hesabına bağlı olmaları gerekiyor. Kaydı kapatınca başka kimse hesap açıp yazı yayınlayamaz.
-
-## 9. Son kontroller · 5 dk
-- İletişim formundan kendine mesaj at, mail geliyor mu bak.
-- `bash deploy/yedek.sh` çalıştır, ardından `ls /root/yedekler` ile dosyaların oluştuğunu gör.
-- Ayda bir yedeği Mac'ine çek: `scp root@SUNUCU_IP:/root/yedekler/db_* ~/Desktop/`
-  - **Sektörde:** "3-2-1 kuralı": verinin kopyası farklı yerlerde durmalı. Sunucu yanarsa yedek de yanmasın.
-- [search.google.com/search-console](https://search.google.com/search-console) adresine alan adını ekle, sitemap olarak `sitemap.xml` ver.
-  - **Neden:** Google siteni daha hızlı bulur.
+**→ Buraya kadar sen yap. IP adresini ve alan adını Claude'a ver, 5-8 arası adımları o da yapabilir.**
 
 ---
 
-## Sonra: kodu değiştirince
+## 5. Sunucuyu kur · 10 dk
 ```bash
-git push                          # Mac'te
 ssh root@SUNUCU_IP
-cd mywebsite && bash deploy/guncelle.sh
+git clone https://github.com/Aliimranatabey/mywebsite.git && cd mywebsite
+DOMAIN=alanadin.com bash deploy/kurulum.sh
 ```
-- **Sektörde:** Şirketler bunu GitHub Actions ile otomatik yapar (CI/CD). İstersen ileride kurarız.
+Script şunları yapar: Docker, güvenlik duvarı, swap, otomatik güvenlik güncellemesi, SSH'ta şifre girişini kapatma, `.env` (rastgele veritabanı şifresi), gece 03:00 yedeği.
+
+## 6. Yazıları ve görselleri taşı · 5 dk
+```bash
+# Mac'te (proje klasöründe)
+bash deploy/tasima-hazirla.sh SUNUCU_IP
+# Sunucuda
+bash deploy/yazilari-yukle.sh
+```
+- 9 yazı ve 47 görsel gider; seed'den gelen 2 deneme yazısı silinir.
+- Site açıldıktan sonra taşırsan: `bash deploy/yazilari-yukle.sh --sifirla` (önce otomatik yedek alır).
+
+## 7. Siteyi aç · 10 dk
+```bash
+dig +short alanadin.com           # sunucu IP'sini yazmalı
+docker compose up -d --build      # ilk derleme 5-10 dk
+docker compose logs -f caddy      # "certificate obtained" → Ctrl+C
+```
+`https://alanadin.com` adresini aç. 🎉
+
+## 8. Hesabını aç, yazıları sahiplen · 3 dk
+```bash
+bash deploy/kayit.sh ac
+# sitede /register sayfasından kayıt ol
+bash deploy/sahiplen.sh senin@epostan.com
+bash deploy/kayit.sh kapat
+```
+
+## 9. Bir kere kontrol et
+- `bash deploy/yedek.sh` → `ls /root/yedekler`
+- Ayda bir yedeği Mac'e çek: `scp root@SUNUCU_IP:/root/yedekler/db_* ~/Desktop/`
+- [Search Console](https://search.google.com/search-console)'a alan adını ekle → sitemap: `sitemap.xml`
+
+## Kod değişince
+```bash
+git push                                   # Mac
+ssh root@SUNUCU_IP 'cd mywebsite && bash deploy/guncelle.sh'
+```
+
+## KVKK'yı korumak için eklememen gerekenler
+Google Analytics · YouTube/Twitter gömme · Google Fonts · dış sitelerden görsel · ziyaretçiden veri alan form.
+Bunlardan biri eklenirse aydınlatma metni ve yurt dışı aktarım yükümlülükleri geri gelir.
 
 ## Sorun çıkarsa
 | Belirti | Bak |
 |---|---|
-| Site açılmıyor | `docker compose ps` (hepsi Up mı?) |
+| Site açılmıyor | `docker compose ps` |
 | HTTPS hatası | `docker compose logs caddy` (DNS doğru mu, bulut gri mi?) |
 | Sayfa var, veri yok | `docker compose logs backend` |
-| Mail gelmiyor | `.env`'deki `MAIL_PASSWORD` uygulama şifresi mi? |

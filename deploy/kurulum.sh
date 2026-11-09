@@ -3,7 +3,7 @@
 #   cd /root/mywebsite && bash deploy/kurulum.sh
 # Tekrar çalıştırmak zararsızdır: yapılmış adımları atlar.
 # Soru sormadan çalıştırmak için değerleri baştan ver:
-#   DOMAIN=... MAIL_USERNAME=... MAIL_PASSWORD=... bash deploy/kurulum.sh
+#   DOMAIN=alanadin.com bash deploy/kurulum.sh
 set -euo pipefail
 
 cd "$(dirname "$0")/.."
@@ -67,19 +67,10 @@ adim "7/7 .env dosyası ve günlük yedek"
 if [ -f .env ]; then
   echo ".env zaten var, dokunulmadı"
 else
-  DOMAIN="${DOMAIN:-}"; MAIL_USERNAME="${MAIL_USERNAME:-}"
-  MAIL_PASSWORD="${MAIL_PASSWORD-__sor__}"; CONTACT_RECIPIENT="${CONTACT_RECIPIENT:-}"
+  DOMAIN="${DOMAIN:-}"
   [ -n "$DOMAIN" ] || read -rp "Alan adın (örn. aliimranatabey.com, www olmadan): " DOMAIN
-  [ -n "$MAIL_USERNAME" ] || read -rp "Mail gönderecek Gmail adresi: " MAIL_USERNAME
-  if [ "$MAIL_PASSWORD" = "__sor__" ]; then
-    read -rsp "Gmail uygulama şifresi (16 harf, yazarken görünmez; sonra eklemek için boş bırak): " MAIL_PASSWORD; echo
-  fi
-  CONTACT_RECIPIENT="${CONTACT_RECIPIENT:-$MAIL_USERNAME}"
   cat > .env <<EOF
 # deploy/kurulum.sh tarafından oluşturuldu
-MAIL_USERNAME=$MAIL_USERNAME
-MAIL_PASSWORD=${MAIL_PASSWORD// /}
-CONTACT_RECIPIENT=$CONTACT_RECIPIENT
 POSTGRES_PASSWORD=$(openssl rand -hex 24)
 REGISTRATION_ENABLED=false
 COMPOSE_PROFILES=prod

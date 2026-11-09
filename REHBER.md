@@ -96,7 +96,7 @@ docker compose down              # durdur (veriler silinmez)
 ```
 mywebsite/
 ├── docker-compose.yml        4 servisi (postgres, pgadmin, backend, frontend) birlikte kaldırır
-├── .env                      gizli bilgiler (mail şifresi) — git'e girmez
+├── .env                      gizli bilgiler (veritabanı şifresi, alan adı) — git'e girmez
 ├── .env.example              .env'in şablonu
 ├── REHBER.md                 bu doküman
 ├── CANLIYA_CIKIS.md          yayına çıkma rehberi
@@ -166,8 +166,8 @@ değişkenlerini kendi ayarlarına otomatik eşler:
 `UPLOADS_DIR` → `${UPLOADS_DIR}` yer tutucusu. Böylece `application.properties`
 lokal varsayılanları tutar, Docker bunları ezer.
 
-`MAIL_USERNAME`, `MAIL_PASSWORD` ve `CONTACT_RECIPIENT` kök dizindeki `.env`
-dosyasından gelir. Docker Compose bu dosyayı otomatik okur.
+`POSTGRES_PASSWORD`, `DOMAIN` gibi değerler kök dizindeki `.env` dosyasından gelir.
+Docker Compose bu dosyayı otomatik okur.
 
 ### 3.2 Volume'ler: veriler neden kaybolmuyor
 
@@ -237,7 +237,7 @@ sırayla uygular ve `flyway_schema_history`'ye yazar.
 
 | Dosya | Ne yapar |
 |---|---|
-| `V1__init.sql` | blog_posts, tags, post_tags, contact_messages tablolarını kurar |
+| `V1__init.sql` | blog_posts, tags, post_tags, contact_messages tablolarını kurar (contact_messages V6'da silindi) |
 | `V2__seed.sql` | İki örnek yazı ekler ("Vue 3 ile Başlangıç", "Spring Boot Giriş") |
 | `V3__add_category_to_blog_posts.sql` | `category` kolonu |
 | `V4__create_users_and_post_ownership.sql` | `users` tablosu ve `blog_posts.author_id` |
@@ -285,7 +285,6 @@ Sebebi: `BlogPost` → `author` → `User` → `passwordHash` zinciri. Entity d�
 | DELETE | `/api/blogs/{id}` | Evet + sahibi olmalı | Siler |
 | POST | `/api/uploads` | Evet | Görsel yükler (multipart, alan adı `file`) → `{"url": "/api/uploads/<uuid>.jpg"}` |
 | GET | `/api/uploads/{ad}` | Hayır | Görseli verir; 1 yıl önbelleklenir |
-| POST | `/api/contact` | Hayır | İletişim mesajı: kaydeder, mail atmayı dener |
 | GET | `/api/auth/csrf` | Hayır | CSRF çerezini yazdırır |
 | POST | `/api/auth/register` | Hayır | Kayıt + otomatik giriş |
 | POST | `/api/auth/login` | Hayır | Giriş |
@@ -356,7 +355,6 @@ IP başına, 15 dakikalık sabit pencere:
 |---|---|
 | POST /api/auth/register | 5 |
 | POST /api/auth/login | 10 |
-| POST /api/contact | 5 |
 | POST /api/uploads | 30 |
 
 Aşılınca 429 döner. Sayaçlar bellekte (`ConcurrentHashMap`) tutulur ve saatte bir
@@ -400,19 +398,20 @@ veritabanında tutuluyor; adreslerde id kullanılıyor (`/blog/12`).
   sitenin yükleme adresleri kabul edilir, dışarıdan keyfi bir adres (izleme pikseli vb.)
   girilemez.
 
-### 5.9 İletişim formu: `ContactService`
+### 5.9 İletişim: form yok (KVKK)
 
-1. Mesaj **her durumda önce veritabanına** yazılır.
-2. Sonra Gmail SMTP ile mail atılmaya çalışılır:
-   - gönderen `MAIL_USERNAME`,
-   - alıcı `CONTACT_RECIPIENT`,
-   - "Yanıtla" denince cevap ziyaretçiye gitsin diye `Reply-To` ziyaretçinin adresi.
-3. Mail gitmezse (ayar yok, şifre yanlış) hata ziyaretçiye yansımaz. Cevaptaki
-   `mailSent: false` alanı sayesinde frontend "Mesajınız kaydedildi" der.
+İletişim formu kaldırıldı. `ContactView` sadece e-posta adresini ve "E-posta gönder"
+(mailto) bağlantısını gösterir; ziyaretçi kendi posta programından yazar.
 
-> Şu an `.env` içinde gerçek Gmail bilgileri yok, şablon değerler duruyor. Yani form
-> mesajları sadece veritabanına düşüyor, mail gelmiyor. Gmail "Uygulama Şifresi"
-> nasıl alınır, `.env.example` içinde yazıyor.
+Amaç: site ziyaretçiden **hiçbir kişisel veri almasın ve saklamasın**:
+- Form ve `contact_messages` tablosu yok (V6 migration tabloyu siler)
+- Ziyaretçiye çerez yazılmaz; çerez sadece giriş yapan kişiye (sana) yazılır
+- Font, görsel, script: hepsi kendi sunucumuzdan. CSP (nginx.conf) başka siteye
+  istek atılmasını engeller, ziyaretçinin IP'si üçüncü taraflara gitmez
+- Medium görselleri indirilip `uploads` volume'üne kondu
+
+> Yeni bir şey eklerken bu kurala dikkat: Google Analytics, YouTube gömme, dış font,
+> dış görsel ya da form eklersen KVKK yükümlülükleri geri gelir.
 
 ### 5.10 Hata cevapları: `GlobalExceptionHandler`
 
@@ -436,9 +435,7 @@ ek olarak alan bazında `{"errors": {"title": "Başlık zorunludur"}}` gelir.
 | `spring.jpa.hibernate.ddl-auto` | validate | Şemayı Flyway yönetir |
 | `spring.jpa.show-sql` | true | Her SQL loga basılır; canlıda kapatılmalı |
 | `spring.jpa.open-in-view` | false | Lazy yükleme controller'a sızmasın diye |
-| `spring.mail.*` | smtp.gmail.com:587 | Kullanıcı/şifre ortam değişkeninden |
 | `spring.servlet.multipart.max-file-size` | 50MB | Asıl 5 MB sınırı serviste |
-| `app.contact.recipient` | `${CONTACT_RECIPIENT}` | |
 | `app.uploads.dir` | `${UPLOADS_DIR:./uploads}` | Docker'da `/app/uploads` |
 | `app.cors.allowed-origins` | varsayılan `http://localhost:5173` | `CorsConfig`'te okunur |
 
@@ -775,7 +772,6 @@ docker compose exec postgres psql -U devuser -d personal_site
 ```sql
 \dt                                                      -- tablolar
 select id, title, author_id, created_at from blog_posts order by created_at desc;
-select * from contact_messages order by created_at desc;  -- iletişim mesajları
 \q                                                       -- çık
 ```
 
@@ -826,5 +822,4 @@ Sitenin çalışmasını engellemiyorlar ama bilmen iyi olur.
 | Yazıda "Düzenle" görünmüyor | Yazı senin değil ya da sahipsiz. Bkz. [8.1](#81-kendi-hesabını-açıp-eski-yazıları-sahiplenmek). |
 | Görsel yüklerken 413 | nginx `client_max_body_size` değişmiş olabilir (50m olmalı). |
 | 429 "Çok fazla deneme" | Hız sınırı. 15 dakika bekle ya da `docker compose restart backend`. |
-| İletişim maili gelmiyor | `.env`'de gerçek Gmail uygulama şifresi yok. Mesajlar yine `contact_messages` tablosunda. |
 | Değişikliğim sitede görünmüyor | `docker compose up -d --build frontend` (veya `backend`) çalıştırmadın. Ya da tarayıcı önbelleği: Cmd+Shift+R. |

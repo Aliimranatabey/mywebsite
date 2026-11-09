@@ -6,95 +6,70 @@
         Soru, öneri ya da birlikte çalışma fikri, hepsine açığım. Genelde birkaç gün içinde dönüyorum.
       </p>
 
-      <v-alert v-if="successMessage" type="success" class="mb-6">{{ successMessage }}</v-alert>
-      <v-alert v-if="errorMessage" type="error" class="mb-6">{{ errorMessage }}</v-alert>
+      <a :href="`mailto:${EMAIL}`" class="btn btn-primary btn-block">E-posta gönder</a>
 
-      <v-form @submit.prevent="submitForm">
-        <div class="field-row">
-          <div>
-            <label class="field-label">Adın</label>
-            <v-text-field v-model="formData.name" hide-details="auto" />
-          </div>
-          <div>
-            <label class="field-label">E-postan</label>
-            <v-text-field v-model="formData.email" type="email" hide-details="auto" />
-          </div>
-        </div>
-
-        <label class="field-label mt-5">Mesajın</label>
-        <v-textarea v-model="formData.message" rows="6" hide-details="auto" class="mb-7" />
-
-        <button type="submit" class="btn btn-primary btn-block" :disabled="loading">
-          {{ loading ? 'Gönderiliyor…' : 'Gönder' }}
+      <div class="address">
+        <span class="address-text">{{ EMAIL }}</span>
+        <button type="button" class="btn btn-secondary btn-sm" @click="copy">
+          {{ copied ? 'Kopyalandı' : 'Kopyala' }}
         </button>
-      </v-form>
+      </div>
 
-      <!-- KVKK md. 10 aydınlatma: kim, ne için, kime aktarılıyor, hakların neler -->
+      <!-- Form yok: site kişisel veri toplamaz, mesaj ziyaretçinin kendi
+           e-posta programından doğrudan gelir (KVKK yükümlülüğü doğmaz). -->
       <p class="privacy">
-        <strong>Kişisel verilerin hakkında:</strong> Adın, e-postan ve mesajın, veri sorumlusu
-        olarak Ali İmran Atabey tarafından yalnızca sana dönüş yapmak için işlenir. Mesaj bu
-        sitenin veritabanında en fazla 1 yıl saklanıp silinir ve Google'ın e-posta hizmeti (Gmail) üzerinden bana
-        iletilir; bu nedenle verin yurt dışındaki sunuculara aktarılabilir. Başka hiçbir amaçla
-        kullanılmaz, kimseyle paylaşılmaz. Formu göndererek buna onay vermiş olursun.
-        KVKK'nın 11. maddesindeki haklarını (öğrenme, düzeltme, silme vb.) kullanmak için bana
-        bu form üzerinden ya da e-postayla yazabilirsin.
+        Bu sitede form, çerez ya da takip aracı yok; ziyaretçilerden hiçbir kişisel veri toplanmaz.
       </p>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import api from '@/services/api'
+import { ref } from 'vue'
 
-const formData = reactive({ name: '', email: '', message: '' })
+const EMAIL = 'aliimranatabey@gmail.com'
 
-const loading = ref(false)
-const successMessage = ref('')
-const errorMessage = ref('')
+const copied = ref(false)
 
-const submitForm = async () => {
-  loading.value = true
-  successMessage.value = ''
-  errorMessage.value = ''
-
+async function copy() {
   try {
-    const response = await api.sendMessage(formData)
-    // Backend mailin gerçekten gidip gitmediğini söylüyor; olduğu gibi aktarıyoruz
-    successMessage.value = response.data?.message || 'Mesajın iletildi.'
-    formData.name = ''
-    formData.email = ''
-    formData.message = ''
-  } catch (e) {
-    errorMessage.value = e.message
-  } finally {
-    loading.value = false
+    await navigator.clipboard.writeText(EMAIL)
+    copied.value = true
+    setTimeout(() => (copied.value = false), 2000)
+  } catch {
+    // Pano izni yoksa adres zaten ekranda, elle kopyalanabilir
   }
 }
 </script>
 
 <style scoped>
+.address {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-top: 1rem;
+  padding: 0.75rem 0.75rem 0.75rem 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+}
+
+.address-text {
+  font-weight: 500;
+  color: var(--text);
+  overflow-wrap: anywhere;
+}
+
+.btn-sm {
+  padding: 0.375rem 0.875rem;
+  font-size: 0.8125rem;
+  flex-shrink: 0;
+}
+
 .privacy {
   margin: 1.5rem 0 0;
   font-size: 0.75rem;
   line-height: 1.55;
   color: var(--text-muted);
-}
-
-.privacy strong {
-  color: var(--text);
-  font-weight: 600;
-}
-
-.field-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 1rem;
-}
-
-@media (max-width: 600px) {
-  .field-row {
-    grid-template-columns: 1fr;
-  }
 }
 </style>

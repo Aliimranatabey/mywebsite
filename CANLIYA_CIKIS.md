@@ -2,6 +2,9 @@
 
 > **Kısa yol:** Hetzner + Cloudflare ile adım adım kurulum için [deploy/YAYINLA.md](deploy/YAYINLA.md).
 > Bu doküman seçeneklerin ve ayrıntıların uzun açıklaması.
+>
+> **Kasım 2026 güncellemesi:** İletişim formu ve Gmail ayarları kaldırıldı (KVKK).
+> Aşağıdaki `MAIL_*`, `CONTACT_RECIPIENT` ve "iletişim formundan mesaj at" adımlarını atla.
 
 Bu doküman, şu an sadece kendi bilgisayarında çalışan siteyi internete açmak için
 seçeneklerini ve her birinin adımlarını anlatır.
